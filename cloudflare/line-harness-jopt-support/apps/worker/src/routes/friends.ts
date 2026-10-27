@@ -559,7 +559,8 @@ friends.get('/api/friends/:id/messages', async (c) => {
     // same history across DirectMessagePanel and the chat panel.
     const result = await c.env.DB
       .prepare(
-        `SELECT id, direction, message_type as messageType, content, created_at as createdAt
+        `SELECT id, direction, message_type as messageType, content, source,
+                sender_staff_id as senderStaffId, sender_staff_name as senderStaffName, created_at as createdAt
          FROM messages_log WHERE friend_id = ?
            AND (delivery_type IS NULL OR delivery_type != 'test')
          ORDER BY created_at DESC LIMIT 200`,
@@ -639,15 +640,18 @@ friends.post('/api/friends/:id/messages', async (c) => {
 
     // Log outgoing message
     const logId = crypto.randomUUID();
+    const sender = c.get('staff');
+    const senderStaffId = sender?.id ?? null;
+    const senderStaffName = sender?.id === 'env-owner' ? '共通オーナーキー' : sender?.name ?? null;
     await db
       .prepare(
-        `INSERT INTO messages_log (id, friend_id, direction, message_type, content, broadcast_id, scenario_step_id, source, created_at)
-         VALUES (?, ?, 'outgoing', ?, ?, NULL, NULL, 'manual', ?)`,
+        `INSERT INTO messages_log (id, friend_id, direction, message_type, content, broadcast_id, scenario_step_id, source, sender_staff_id, sender_staff_name, created_at)
+         VALUES (?, ?, 'outgoing', ?, ?, NULL, NULL, 'manual', ?, ?, ?)`,
       )
-      .bind(logId, friend.id, messageType, body.content, jstNow())
+      .bind(logId, friend.id, messageType, body.content, senderStaffId, senderStaffName, jstNow())
       .run();
 
-    return c.json({ success: true, data: { messageId: logId } });
+    return c.json({ success: true, data: { messageId: logId, senderStaffId, senderStaffName } });
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
     console.error('POST /api/friends/:id/messages error:', errMsg);

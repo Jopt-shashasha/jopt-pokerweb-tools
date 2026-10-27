@@ -1,0 +1,179 @@
+{
+  "result": {
+    "deployments": [
+      {
+        "id": "87dbf575-f23b-4b45-8902-d8ce5bb01bff",
+        "source": "dash",
+        "strategy": "percentage",
+        "author_email": "xhpc007@gmail.com",
+        "annotations": {
+          "workers/message": "已部署版本 e2664132",
+          "workers/triggered_by": "deployment"
+        },
+        "versions": [
+          {
+            "version_id": "e2664132-b206-4b77-9812-272bf8ef2211",
+            "percentage": 100
+          }
+        ],
+        "created_on": "2026-10-26T05:51:35.652487Z"
+      },
+      {
+        "id": "8e30e9bc-33f7-48e9-9dd6-b421ef09f424",
+        "source": "wrangler",
+        "strategy": "percentage",
+        "author_email": "xhpc007@gmail.com",
+        "annotations": {
+          "workers/triggered_by": "deployment"
+        },
+        "versions": [
+          {
+            "version_id": "2e8a4fde-9091-4d40-b187-0c14d6675453",
+            "percentage": 100
+          }
+        ],
+        "created_on": "2026-10-26T02:37:48.442945Z"
+      },
+      {
+        "id": "30323dea-f1c6-4e94-b93d-b5b7ed595d8b",
+        "source": "wrangler",
+        "strategy": "percentage",
+        "author_email": "xhpc007@gmail.com",
+        "annotations": {
+          "workers/triggered_by": "deployment"
+        },
+        "versions": [
+          {
+            "version_id": "1ea9c71f-1f4d-44bc-a48b-a34d9032f905",
+            "percentage": 100
+          }
+        ],
+        "created_on": "2026-10-23T09:33:34.524103Z"
+      },
+      {
+        "id": "247a45bd-5673-40c9-aa76-5e4ac5c75960",
+        "source": "wrangler",
+        "strategy": "percentage",
+        "author_email": "xhpc007@gmail.com",
+        "annotations": {
+          "workers/triggered_by": "deployment"
+        },
+        "versions": [
+          {
+            "version_id": "7580a5ce-5a10-425b-a632-68ef77baa76f",
+            "percentage": 100
+          }
+        ],
+        "created_on": "2026-10-23T09:32:07.576641Z"
+      },
+      {
+        "id": "89db0cc4-9dd8-469b-aaed-f36f328ae9c6",
+        "source": "wrangler",
+        "strategy": "percentage",
+        "author_email": "xhpc007@gmail.com",
+        "annotations": {
+          "workers/triggered_by": "deployment"
+        },
+        "versions": [
+          {
+            "version_id": "2d179ec5-0c61-4b13-90c6-17326bc304f1",
+            "percentage": 100
+          }
+        ],
+        "created_on": "2026-10-23T08:54:13.140728Z"
+      },
+      {
+        "id": "e4290433-cf4d-4df5-a0ca-d581d4301e25",
+        "source": "wrangler",
+        "strategy": "percentage",
+        "author_email": "xhpc007@gmail.com",
+        "annotations": {
+          "workers/triggered_by": "deployment"
+        },
+        "versions": [
+          {
+            "version_id": "74debf17-9f64-4ed6-92a5-233efea2f054",
+            "percentage": 100
+          }
+        ],
+        "created_on": "2026-10-23T08:46:34.653629Z"
+      },
+      {
+        "id": "fd1af5a8-f8a9-4e47-bb46-fde5b3d271be",
+        "source": "wrangler",
+        "strategy": "percentage",
+        "author_email": "xhpc007@gmail.com",
+        "annotations": {
+          "workers/triggered_by": "deployment"
+        },
+        "versions": [
+          {
+            "version_id": "01d1c74a-602a-4834-9a27-9e55a8af05c2",
+            "percentage": 100
+          }
+        ],
+        "created_on": "2026-10-17T09:13:29.657296Z"
+      },
+      {
+        "id": "95b2274f-1f4f-4f17-9490-7653f6b54e22",
+        "source": "wrangler",
+        "strategy": "percentage",
+        "author_email": "xhpc007@gmail.com",
+        "annotations": {
+          "workers/triggered_by": "deployment"
+        },
+        "versions": [
+          {
+            "version_id": "01d86bc2-bf0d-4836-949a-6ff4aadabccc",
+            "percentage": 100
+          }
+        ],
+        "created_on": "2026-10-17T09:12:55.498645Z"
+      },
+      {
+        "id": "e4e29108-5a24-48ab-beeb-087f46d5e6a0",
+        "source": "wrangler",
+        "strategy": "percentage",
+        "author_email": "xhpc007@gmail.com",
+        "annotations": {
+          "workers/message": "Automatic deployment on upload.",
+          "workers/triggered_by": "upload"
+        },
+        "versions": [
+          {
+            "version_id": "9684583a-2fbd-498d-bf48-c0a9397a10a3",
+            "percentage": 100
+          }
+        ],
+        "created_on": "2026-10-17T09:10:31.252737Z"
+      },
+      {
+        "id": "e7d74e4f-f897-4429-992e-c2c0732dbb24",
+        "source": "wrangler",
+        "strategy": "percentage",
+        "author_email": "xhpc007@gmail.com",
+        "annotations": {
+          "workers/message": "Automatic deployment on upload.",
+          "workers/triggered_by": "upload"
+        },
+        "versions": [
+          {
+            "version_id": "fd7b492f-afc8-4187-a3ff-99af6ec66dbe",
+            "percentage": 100
+          }
+        ],
+        "created_on": "2026-10-17T09:08:57.416459Z"
+      }
+    ]
+  },
+  "success": true,
+  "errors": [],
+  "messages": [],
+  "result_info": {
+    "page": 1,
+    "per_page": 10,
+    "count": 10,
+    "total_count": 10,
+    "total_pages": 1
+  }
+}

@@ -310,15 +310,17 @@ chats.get('/api/chats', async (c) => {
       any_agg AS (
         SELECT friend_id,
           CASE WHEN message_type = 'text' THEN SUBSTR(content, 1, 200) ELSE NULL END AS content,
-          direction, message_type,
+          direction, message_type, source,
           MAX(created_at) AS created_at
         FROM messages_log
         WHERE (delivery_type IS NULL OR delivery_type != 'test')
+          AND NOT (direction = 'incoming' AND COALESCE(source, '') = 'postback' AND content LIKE 'faqv1:%')
+          AND NOT (direction = 'outgoing' AND COALESCE(source, '') = 'auto_reply')
           AND friend_id IN (SELECT friend_id FROM page)
         GROUP BY friend_id
       ),
       recent_msg AS (
-        SELECT friend_id, content, direction, message_type, created_at AS preview_at
+        SELECT friend_id, content, direction, message_type, source, created_at AS preview_at
         FROM any_agg
       )
       SELECT
@@ -335,6 +337,7 @@ chats.get('/api/chats', async (c) => {
         rm.content AS last_message_content,
         rm.direction AS last_message_direction,
         rm.message_type AS last_message_type,
+        rm.source AS last_message_source,
         COALESCE(c.created_at, d.last_message_at) AS created_at,
         COALESCE(c.updated_at, d.last_message_at) AS updated_at
       FROM page d
@@ -368,6 +371,7 @@ chats.get('/api/chats', async (c) => {
       lastMessageContent: ch.last_message_content || null,
       lastMessageDirection: ch.last_message_direction || null,
       lastMessageType: ch.last_message_type || null,
+      lastMessageSource: ch.last_message_source || null,
       createdAt: ch.created_at,
       updatedAt: ch.updated_at,
     }));
@@ -384,6 +388,7 @@ chats.get('/api/chats', async (c) => {
             lastMessageContent: u.lastIncomingType === 'text' ? u.lastIncomingContent : null,
             lastMessageDirection: 'incoming' as const,
             lastMessageType: u.lastIncomingType,
+            lastMessageSource: null,
           };
         })
         // 上書きで lastMessageAt が変わったので resort
@@ -443,9 +448,11 @@ chats.get('/api/chats/:id', async (c) => {
     // 現状の最重量ユーザー(481件)の2倍バッファ。これ以上の履歴はページング未実装（Phase 2 TODO）。
     const messages = await c.env.DB
       .prepare(
-        `SELECT id, friend_id, direction, message_type, content, created_at
+        `SELECT id, friend_id, direction, message_type, content, source, sender_staff_id, sender_staff_name, created_at
          FROM messages_log
          WHERE friend_id = ? AND (delivery_type IS NULL OR delivery_type != 'test')
+           AND NOT (direction = 'incoming' AND COALESCE(source, '') = 'postback' AND content LIKE 'faqv1:%')
+           AND NOT (direction = 'outgoing' AND COALESCE(source, '') = 'auto_reply')
          ORDER BY created_at DESC LIMIT 1000`,
       )
       .bind(resolvedFriendId)
@@ -469,6 +476,9 @@ chats.get('/api/chats/:id', async (c) => {
           direction: m.direction,
           messageType: m.message_type,
           content: m.content,
+          source: m.source,
+          senderStaffId: m.sender_staff_id,
+          senderStaffName: m.sender_staff_name,
           createdAt: m.created_at,
         })),
       },
@@ -601,15 +611,18 @@ chats.post('/api/chats/:id/send', async (c) => {
     // One row per request/recipient preserves quota accounting; the UI expands the group.
     const log = messagesToLogPayload(messages, messageToLogPayload);
     const logId = crypto.randomUUID();
+    const sender = c.get('staff');
+    const senderStaffId = sender?.id ?? null;
+    const senderStaffName = sender?.id === 'env-owner' ? '共通オーナーキー' : sender?.name ?? null;
     await c.env.DB
-      .prepare(`INSERT INTO messages_log (id, friend_id, direction, message_type, content, source, line_account_id, created_at) VALUES (?, ?, 'outgoing', ?, ?, 'manual', ?, ?)`)
-      .bind(logId, friend.id, log.messageType, log.content, lineAccountId, jstNow())
+      .prepare(`INSERT INTO messages_log (id, friend_id, direction, message_type, content, source, line_account_id, sender_staff_id, sender_staff_name, created_at) VALUES (?, ?, 'outgoing', ?, ?, 'manual', ?, ?, ?, ?)`)
+      .bind(logId, friend.id, log.messageType, log.content, lineAccountId, senderStaffId, senderStaffName, jstNow())
       .run();
 
     // チャットの最終メッセージ日時を更新（chat.id を直接使う — friend_id で呼ばれても resolveOrCreateChat 済み）
     await updateChat(c.env.DB, chat.id, { status: 'in_progress', lastMessageAt: jstNow() });
 
-    return c.json({ success: true, data: { sent: true, messageId: logId } });
+    return c.json({ success: true, data: { sent: true, messageId: logId, senderStaffId, senderStaffName } });
   } catch (err) {
     console.error('POST /api/chats/:id/send error:', err);
     return c.json({ success: false, error: 'Internal server error' }, 500);

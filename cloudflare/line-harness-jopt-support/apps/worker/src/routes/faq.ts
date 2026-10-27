@@ -54,6 +54,10 @@ faq.post('/api/faq/accounts/:accountId/releases/:id/activate',async c=>{
   if(b.audience==='production'&&b.confirmProduction!==true)throw new FaqError('正式公開の確認が必要です');
   if(b.friendIds!==undefined&&(!Array.isArray(b.friendIds)||b.friendIds.some(id=>typeof id!=='string')))throw new FaqError('friendIdsが不正です');
   if(b.openTest!==undefined&&typeof b.openTest!=='boolean')throw new FaqError('openTestが不正です');
+  if(b.audience==='test'&&b.openTest!==true){
+    const members=await c.env.DB.prepare('SELECT friend_id FROM faq_test_menu_members WHERE account_id=?').bind(account).all<{friend_id:string}>();
+    b.friendIds=[...new Set([...(b.friendIds||[]) as string[],...members.results.map(m=>m.friend_id)])];
+  }
   return c.json({success:true,data:await deployFaq(c.env.DB,account,c.req.param('id'),b.audience,(b.friendIds||[]) as string[],c.get('staff').id,b.openTest===true)});
 });
 faq.delete('/api/faq/accounts/:accountId/deployments/:audience',async c=>{

@@ -1,0 +1,40 @@
+{
+  "size": {
+    "width": 2500,
+    "height": 843
+  },
+  "selected": true,
+  "name": "JOPT Support FAQ V1（個人テスト）",
+  "chatBarText": "メニュー",
+  "areas": [
+    {
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1512,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "FAQ",
+        "data": "faqv1:test",
+        "displayText": "FAQ"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1512,
+        "y": 0,
+        "width": 988,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "担当者に相談",
+        "data": "faqv1:test:human",
+        "displayText": "担当者に相談"
+      }
+    }
+  ],
+  "richMenuId": "richmenu-9d569f5dd78c79db9adf50cf164e95f9"
+}

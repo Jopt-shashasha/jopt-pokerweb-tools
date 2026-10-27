@@ -1,0 +1,63 @@
+{
+  "actual": {
+    "richMenuId": "richmenu-5c85fb8f5ac6a8f51474763e20662e5f",
+    "name": "JOPT Support 大FAQ＋2入口（個人テスト）",
+    "size": {
+      "width": 2500,
+      "height": 1686
+    },
+    "chatBarText": "メニュー",
+    "selected": true,
+    "areas": [
+      {
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1667,
+          "height": 1686
+        },
+        "action": {
+          "label": "よくあるご質問",
+          "type": "postback",
+          "data": "faqv1:test"
+        }
+      },
+      {
+        "bounds": {
+          "x": 1667,
+          "y": 0,
+          "width": 833,
+          "height": 843
+        },
+        "action": {
+          "label": "担当者に相談",
+          "type": "postback",
+          "data": "support:open-keyboard",
+          "inputOption": "openKeyboard"
+        }
+      },
+      {
+        "bounds": {
+          "x": 1667,
+          "y": 843,
+          "width": 833,
+          "height": 843
+        },
+        "action": {
+          "label": "English FAQ",
+          "type": "uri",
+          "uri": "https://japanopenpoker.com/english-guide/?openExternalBrowser=1"
+        }
+      }
+    ]
+  },
+  "assigned": {
+    "id": "richmenu-5c85fb8f5ac6a8f51474763e20662e5f",
+    "name": "JOPT Support 大FAQ＋2入口（個人テスト）",
+    "isDefault": false
+  },
+  "imported": {
+    "id": "05106304-8b90-42e8-8971-896b361a44ed",
+    "name": "JOPT Support 大FAQ＋2入口（個人テスト）"
+  }
+}

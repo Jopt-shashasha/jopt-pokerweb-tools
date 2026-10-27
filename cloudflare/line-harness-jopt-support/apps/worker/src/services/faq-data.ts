@@ -1,12 +1,21 @@
 export interface FaqNode {
   id: string; parent?: string | null; label: string; type: 'menu'|'answer'|'check'|'redirect'|'handoff';
   body?: string; order?: number; channel?: string | null; handoff?: string | null;
-  status?: string; per_event?: boolean; links?: string[];
+  status?: string; per_event?: boolean; links?: string[]; brand?: string;
 }
 export interface FaqRecord { id?: string; key?: string; name?: string; url?: string; status?: string; value?: string; text?: string; valid_until?: string; fields?: string[]; [key:string]: unknown }
 export interface FaqData { nodes: Record<string,FaqNode>; channels: Record<string,FaqRecord>; handoffs: Record<string,FaqRecord>; vars: Record<string,FaqRecord>; messages: Record<string,FaqRecord>; events: Record<string,FaqRecord> }
 export interface FaqValidation { errors: string[]; warnings: string[]; counts: Record<string,number>; productionReady: boolean }
 export class FaqError extends Error {}
+export function faqBrand(d:FaqData,nodeId:string):string|undefined {
+  let n:FaqNode|undefined=d.nodes[nodeId]; const seen=new Set<string>();
+  while(n&&!seen.has(n.id)){seen.add(n.id);if(n.brand)return n.brand;n=d.nodes[n.parent??''];}
+  return undefined;
+}
+export function faqEvents(d:FaqData,nodeId:string):FaqRecord[] {
+  const brand=faqBrand(d,nodeId);
+  return Object.values(d.events).filter(e=>e.active===true&&(!brand||e.brand===brand));
+}
 const idPattern=/^[A-Za-z0-9_.-]{1,64}$/;
 function record(input: unknown, key='id'): Record<string,any> {
   if(input===undefined) return Object.create(null);
@@ -36,14 +45,19 @@ export function expandFaq(data:FaqData,text:string,eventId?:string,fields=''):st
   for(const [k,v] of Object.entries(data.messages)) values[k]=String(v.text??'');
   const e=eventId?data.events[eventId]:undefined;
   if(e){
-    const mapping:Record<string,string>={event_name:'name',event_dates:'dates',event_venue:'venue',players_guide_url:'guide_url',receipt_form_event:'receipt_form',receipt_send_deadline:'receipt_deadline',age_note:'age_note',media_form_url:'media_form',photo_album_url:'photo_url'};
+    const mapping:Record<string,string>={event_name:'name',event_dates:'dates',event_venue:'venue',players_guide_url:'guide_url',receipt_form_event:'receipt_form',receipt_send_deadline:'receipt_deadline',preentry_deadline:'preentry_deadline',age_note:'age_note',media_form_url:'media_form',photo_album_url:'photo_url'};
     for(const [k,v] of Object.entries(mapping)) values[k]=String(e[v]??'');
   }
   values.fields=fields;
   let out=text;
   for(let i=0;i<8;i++){const next=out.replace(/\{\{\s*([\w]+)\s*\}\}/g,(m,k)=>Object.hasOwn(values,k)?values[k]:m);if(next===out)break;out=next;}
-  const jp:Record<string,string>={'大会名':'event_name','日程':'event_dates','会場':'event_venue','ガイドURL':'players_guide_url','年齢制限':'age_note','領収書フォーム':'receipt_form_event','領収書送付期限':'receipt_send_deadline','写真アルバム':'photo_album_url','メディア申請':'media_form_url'};
-  return out.replace(/【([^】]+)】/g,(m,k)=>jp[k]&&values[jp[k]]?values[jp[k]]:m);
+  const jp:Record<string,string>={'大会名':'event_name','日程':'event_dates','会場':'event_venue','ガイドURL':'players_guide_url','年齢制限':'age_note','領収書フォーム':'receipt_form_event','領収書送付期限':'receipt_send_deadline','事前予約期限':'preentry_deadline','写真アルバム':'photo_album_url','メディア申請':'media_form_url'};
+  let extra:Record<string,unknown>={};
+  if(e?.extra){try{const parsed=typeof e.extra==='string'?JSON.parse(e.extra):e.extra;if(parsed&&typeof parsed==='object'&&!Array.isArray(parsed))extra=parsed;}catch{/* Keep malformed extra values visible for validation. */}}
+  return out.replace(/【([^】]+)】/g,(m,k)=>{
+    if(jp[k]&&Object.hasOwn(values,jp[k]))return values[jp[k]]|| (k==='年齢制限'?'':m);
+    return Object.hasOwn(extra,k)&&typeof extra[k]==='string'&&extra[k]?String(extra[k]):m;
+  });
 }
 export function validateFaq(d:FaqData,today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Tokyo'}).format(new Date())):FaqValidation {
   const errors:string[]=[],warnings:string[]=[];const counts:Record<string,number>=Object.create(null);
@@ -61,9 +75,9 @@ export function validateFaq(d:FaqData,today=new Intl.DateTimeFormat('sv-SE',{tim
     if(n.type==='redirect'&&(!n.channel||!d.channels[n.channel]?.url)) errors.push(`${n.id}: 誘導先URLがありません`);
     if(n.links!==undefined&&(!Array.isArray(n.links)||n.links.some(id=>typeof id!=='string'||!d.nodes[id])))errors.push(`${n.id}: 関連メニューが不正です`);
     if(n.status!=='確認済')warnings.push(`${n.id}: 要確認`);
-    const contexts=n.per_event?Object.values(d.events).filter(e=>e.active===true).map(e=>e.id):[undefined];
+    const contexts=n.per_event?faqEvents(d,n.id).map(e=>e.id):[undefined];
     if(!contexts.length)warnings.push(`${n.id}: 開催大会が未設定です`);
-    for(const context of contexts){const text=expandFaq(d,typeof n.body==='string'?n.body:'',context);if((!text.trim()&&n.type!=='handoff')||/\{\{|（[^）]*入力[^）]*）|【(?:大会名|日程|会場|ガイドURL|年齢制限|領収書フォーム|領収書送付期限|写真アルバム|メディア申請)】/.test(text))warnings.push(`${n.id}${context?'/'+context:''}: 本文に未設定の値があります`);if(Array.from(text).length>8000)errors.push(`${n.id}: 本文が長すぎます（8000文字以内）`);}
+    for(const context of contexts){const text=expandFaq(d,typeof n.body==='string'?n.body:'',context);if((!text.trim()&&n.type!=='handoff')||/\{\{|（[^）]*入力[^）]*）|【(?:大会名|日程|会場|ガイドURL|年齢制限|領収書フォーム|領収書送付期限|事前予約期限|写真アルバム|メディア申請)】/.test(text))warnings.push(`${n.id}${context?'/'+context:''}: 本文に未設定の値があります`);if(Array.from(text).length>8000)errors.push(`${n.id}: 本文が長すぎます（8000文字以内）`);}
   }
   for(const [id,ch] of Object.entries(d.channels)){
     if(ch.url){try{const u=new URL(ch.url);if(u.protocol!=='https:')throw 0;}catch{errors.push(`${id}: HTTPSのURLを指定してください`);}}

@@ -177,6 +177,63 @@ const spec = {
     },
   },
   paths: {
+    '/api/faq/validate': {
+      post: { tags: ['FAQ'], summary: 'FAQ JSONを検証（管理者以上）', requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['payload'], properties: { payload: { type: 'object' } } } } } }, responses: { '200': { description: 'Validation errors, warnings, counts and production readiness; no data imported or published' }, '400': { description: 'Invalid JSON' }, '403': { description: 'Administrator required' } } },
+    },
+    '/api/faq/accounts/{accountId}': {
+      get: { tags: ['FAQ'], summary: 'FAQバージョンとテスト・正式版の公開状態', parameters: [{ name: 'accountId', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'Immutable releases and active deployment pointers' } } },
+    },
+    '/api/faq/accounts/{accountId}/releases': {
+      post: { tags: ['FAQ'], summary: 'FAQ JSONを下書きとして取り込む（管理者以上）', parameters: [{ name: 'accountId', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['payload'], properties: { payload: { type: 'object' } } } } } }, responses: { '201': { description: 'Account-scoped immutable draft; does not activate FAQ or change menus' }, '400': { description: 'Invalid payload' }, '413': { description: 'Payload exceeds 2 MiB' } } },
+    },
+    '/api/faq/accounts/{accountId}/releases/{id}': {
+      get: { tags: ['FAQ'], summary: '保存済みFAQバージョンの内容', parameters: [{ name: 'accountId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'id', in: 'path', required: true, schema: { type: 'string' } }], responses: { '200': { description: 'Release metadata and original payload' }, '404': { description: 'Release not in this account' } } },
+    },
+    '/api/faq/accounts/{accountId}/releases/{id}/preview': {
+      post: { tags: ['FAQ'], summary: 'FAQノードをプレビュー（LINEへの送信なし）', parameters: [{ name: 'accountId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', properties: { nodeId: { type: 'string' }, eventId: { type: 'string' } } } } } }, responses: { '200': { description: 'Rendered view and LINE message; no delivery or chat-state changes' }, '404': { description: 'Release not found' } } },
+    },
+    '/api/faq/accounts/{accountId}/releases/{id}/activate': {
+      post: { tags: ['FAQ'], summary: 'FAQのテスト開始・正式公開（管理者以上）', parameters: [{ name: 'accountId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'id', in: 'path', required: true, schema: { type: 'string' } }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['audience'], properties: { audience: { type: 'string', enum: ['test', 'production'] }, openTest: { type: 'boolean' }, friendIds: { type: 'array', items: { type: 'string' } }, confirmProduction: { type: 'boolean' } } } } } }, responses: { '200': { description: 'Deployment activated; private tests include registered menu members. Production requires explicit confirmation and valid content.' }, '400': { description: 'Validation or activation requirements not met' }, '403': { description: 'Administrator required' } } },
+    },
+    '/api/faq/accounts/{accountId}/deployments/{audience}': {
+      delete: { tags: ['FAQ'], summary: 'FAQテスト・正式版を停止（メニュー・保存データは保持）', parameters: [{ name: 'accountId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'audience', in: 'path', required: true, schema: { type: 'string', enum: ['test', 'production'] } }], responses: { '200': { description: 'Active deployment pointer removed and stop recorded in audit log' }, '403': { description: 'Administrator required' } } },
+    },
+    '/api/accounts/{accountId}/faq-test-members': {
+      get: {
+        tags: ['FAQ'], summary: 'テスト用メニューと登録メンバーを取得（担当者以上）',
+        parameters: [{ name: 'accountId', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Verified faqv1:test menus, members, current LINE binding states, and test activation state' }, '401': { description: 'Authentication required' }, '502': { description: 'LINE connection unavailable' } },
+      },
+      post: {
+        tags: ['FAQ'], summary: '同僚をテストメニューに追加（全員の標準メニューは変更しない）',
+        parameters: [{ name: 'accountId', in: 'path', required: true, schema: { type: 'string' } }],
+        requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['groupId', 'friendIds'], properties: { groupId: { type: 'string' }, friendIds: { type: 'array', minItems: 1, maxItems: 30, items: { type: 'string' } } } } } } },
+        responses: { '200': { description: 'Per-friend success/error results; partial failures are not reported as success' }, '400': { description: 'Invalid account/friends/menu or private-test member limit' }, '401': { description: 'Authentication required' }, '409': { description: 'Start a FAQ test release first' }, '502': { description: 'LINE connection unavailable' } },
+      },
+    },
+    '/api/accounts/{accountId}/faq-test-members/{friendId}': {
+      delete: {
+        tags: ['FAQ'], summary: 'テストメニュー登録を解除し、元の個別メニューまたは標準メニューに戻す',
+        parameters: [{ name: 'accountId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'friendId', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Registration removed; a menu independently changed elsewhere is preserved' }, '401': { description: 'Authentication required' }, '404': { description: 'Friend not in the selected account' }, '502': { description: 'LINE connection unavailable; registration retained for retry' } },
+      },
+    },
+    '/api/service-capacity': {
+      get: {
+        tags: ['Operations'], summary: 'Official usage and configured free-plan remaining capacity (owner/admin)',
+        responses: { '200': { description: 'Independent Cloudflare/Appwrite states, metrics, remaining amounts, reset times and timestamps. Unknown is null, never zero.' }, '401': { description: 'Authentication required' }, '403': { description: 'Owner/admin only' } },
+      },
+    },
+    '/api/cloudflare-traffic': {
+      get: {
+        tags: ['Operations'], summary: 'Cloudflare Worker traffic (owner/admin only)',
+        parameters: [{ name: 'period', in: 'query', schema: { type: 'string', enum: ['24h', '7d'], default: '24h' } }],
+        responses: {
+          '200': { description: 'Ready metrics (requests/errors/subrequests, CPU P50/P99 in ms, hourly series, UTC range/fetchedAt), or explicit not_configured/permission_error/unavailable state' },
+          '400': { description: 'Invalid period' }, '401': { description: 'Authentication required' }, '403': { description: 'Owner/admin only' },
+        },
+      },
+    },
     // ── Friends ─────────────────────────────────────────────────────────────
     '/api/friends': {
       get: {

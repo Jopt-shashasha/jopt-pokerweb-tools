@@ -1,0 +1,493 @@
+
+window.parent.maeExportApis_();
+
+(()=>{
+const URL_BASE="https://script.google.com/a/macros/japanopenpoker.com/s/AKfycbxYnHkRif6scTpk6yrbKhlwfxVIB0WYQ5jU1vyM-LGtJnCgMSzivshc386MMrzmEsvt-g/exec";
+
+document.getElementById("adminLink").href=URL_BASE+"?mode=admin";
+const S={nodes:{},channels:{},handoffs:{},vars:{},messages:{},events:{}};
+const TYPES={answer:"自動返信で回答",check:"必要事項を確認して担当者へ引き継ぐ",redirect:"別の公式LINEを案内",handoff:"担当者が対応"};
+const TNAME={answer:"自動返信",check:"確認後に担当者へ",redirect:"別のLINEを案内",handoff:"担当者が対応"};
+const GO={answer:"自動返信",check:"確認後に担当者へ",redirect:"別LINEへ",handoff:"担当者"};
+let typeF=null, filter=null, sel=null, level="root", dirty=false, busy=false, addingAt=null, tab="edit";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let lastSaved=0, flashId=null;
+function toast(t){ const e=$("#toast"), ok=/^(保存しました|追加しました|削除しました|並び順を変えました)/.test(t);
+  e.textContent=(ok?"✓ ":"")+t; e.classList.toggle("ok",ok); e.classList.add("on"); clearTimeout(e._t); e._t=setTimeout(()=>e.classList.remove("on"),ok?2600:2200);
+  if(/^保存しました/.test(t)){ lastSaved=Date.now(); flashId=sel; setTimeout(()=>{ const b=document.querySelector(".savedbar"); if(b&&Date.now()-lastSaved>=3900){ b.style.transition="opacity .4s"; b.style.opacity="0"; setTimeout(()=>b.remove(),400); } },4000); }
+  else if(!ok) document.querySelectorAll(".btn.loading").forEach(b=>{ b.classList.remove("loading"); b.textContent=b.dataset.label||"保存"; b.disabled=false; });
+  if(!ok) busy=false;
+}
+document.addEventListener("click",e=>{ const b=e.target.closest("#e_save,#m_save,#r_save,#v_save"); if(b&&!b.classList.contains("loading")){ b.dataset.label=b.textContent; b.classList.add("loading"); b.innerHTML='<span class="spin"></span>保存中…'; } },true);
+function gs(fn,...a){return new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...a));}
+function apply(d){["nodes","channels","handoffs","vars","messages","events"].forEach(k=>S[k]=d[k]||{});}
+const kids=p=>Object.values(S.nodes).filter(n=>n.parent===p&&n.id!=="root").sort((a,b)=>(a.order||0)-(b.order||0));
+const anc=id=>{const a=[];let n=S.nodes[id];while(n&&n.id!=="root"){a.unshift(n.id);n=S.nodes[n.parent];}return a;};
+const depth=id=>id==="root"?0:anc(id).length;
+const EVF={"大会名":"name","日程":"dates","会場":"venue","ガイドURL":"guide_url","領収書フォーム":"receipt_form","領収書送付期限":"receipt_deadline","年齢制限":"age_note","写真アルバム":"photo_url","メディア申請":"media_form"};
+const activeEvents=()=>Object.values(S.events).filter(e=>e.active).sort((a,b)=>(a.order||0)-(b.order||0));
+const customFields=()=>{ try{ return JSON.parse((S.messages.msg_event_fields&&S.messages.msg_event_fields.text)||"[]"); }catch(e){ return []; } };
+const allTags=()=>Object.keys(EVF).concat(customFields());
+const extraOf=ev=>{ try{ return JSON.parse(ev.extra||"{}"); }catch(e){ return {}; } };
+function eventBrand(ev){ return ev.brand||(/^SPADIE\b/i.test(ev.name||'')?'SPADIE':'JOPT'); }
+function commonValue(k){return S.vars[k]&&S.vars[k].value||'';}
+function evVal(ev,k){
+  if(k==='メディア申請')return commonValue('media_form_url');
+  if(k==='写真アルバム')return commonValue('photo_album_url_'+eventBrand(ev).toLowerCase());
+  return EVF[k]?ev[EVF[k]]:extraOf(ev)[k];
+}
+function expandEv(t,ev){ const tags=allTags(); return String(t||"").replace(/【([^】]+)】/g,(m,k)=>tags.includes(k)?(ev?(evVal(ev,k)||(k==='年齢制限'?'':`（${k}未入力）`)):m):m); }
+function copyText(t){
+  const ok=()=>toast(`${t} をコピーしました。返信メッセージに貼り付けてください`);
+  try{ if(navigator.clipboard&&window.isSecureContext){ navigator.clipboard.writeText(t).then(ok,()=>fallback()); return; } }catch(e){}
+  fallback();
+  function fallback(){ const ta=document.createElement("textarea"); ta.value=t; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); ok(); }catch(e){ toast("コピーできませんでした: "+t); } ta.remove(); }
+}
+function expand(t){
+  return esc(t).replace(/\{\{\s*(\w+)\s*\}\}/g,(m,k)=>{
+    if(S.messages[k]) return esc(S.messages[k].text);
+    if(S.vars[k]&&S.vars[k].value) return esc(S.vars[k].value);
+    if(S.channels[k]) return esc(S.channels[k].url);
+    return `<span class="var">{{${esc(k)}}}</span>`;
+  }).replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>');
+}
+function modal({title,text="",flow="",input=null,ok="OK",danger=false}){
+  return new Promise(res=>{
+    const bg=document.createElement("div"); bg.className="mbg";
+    bg.innerHTML=`<div class="mbox"><h3>${title}</h3>${flow?`<div class="mflow">${flow}</div>`:""}${text?`<p>${text}</p>`:""}${input?`<label>${esc(input.label)}</label><input id="mIn" value="${esc(input.value||"")}">`:""}<div class="mbtns"><button class="btn sec" data-m="no">キャンセル</button><button class="btn ${danger?"red":"pri"}" data-m="ok">${ok}</button></div></div>`;
+    document.body.appendChild(bg);
+    const done=v=>{ bg.remove(); res(v); };
+    bg.querySelector('[data-m=no]').onclick=()=>done(null);
+    bg.querySelector('[data-m=ok]').onclick=()=>done(input?(bg.querySelector("#mIn").value.trim()||input.value||""):true);
+    bg.onclick=e=>{ if(e.target===bg) done(null); };
+    const mi=bg.querySelector("#mIn"); if(mi){ mi.focus(); mi.select(); mi.onkeydown=e=>{ if(e.key==="Enter") bg.querySelector('[data-m=ok]').click(); if(e.key==="Escape") done(null); }; }
+  });
+}
+function leave(){ if(!dirty) return true; if(confirm("変更が保存されていません。保存せずに移動しますか？")){dirty=false;return true;} return false; }
+function go(id){ sel=id||null; tab="edit"; addingAt=null;
+  if(!sel||sel==="__root") level="root"; else { const n=S.nodes[sel]; level=n.type==="menu"?n.id:(n.parent||"root"); }
+  render(); }
+const parentOf=id=>(S.nodes[id]&&S.nodes[id].parent)||"root";
+
+ 
+function renderCrumbs(){
+  const chain=level==="root"?[]:anc(level);
+  $("#crumbs").innerHTML=`<button data-cr="" class="${chain.length?"":"cur"}">トップ</button>`+chain.map((id,i)=>`<span class="sep">›</span><button data-cr="${esc(id)}" class="${i===chain.length-1?"cur":""}">${esc(S.nodes[id].label)}</button>`).join("");
+  $("#crumbs").querySelectorAll("button:not(.cur)").forEach(b=>b.onclick=()=>{ if(leave()){ filter=null; go(b.dataset.cr||null); } });
+}
+/* ---------- サイドバー（ツリー） ---------- */
+function wireStats(sd){ sd.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{ filter=filter===b.dataset.f?null:b.dataset.f; render(); }); }
+function doFlash(sd){ if(!flashId||Date.now()-lastSaved>1500) return; const id=String(flashId).replace(/^ev:/,""); const b=sd.querySelector(`[data-id="${id}"],[data-fid="${id}"],[data-ev="${id}"]`); if(b){ b.classList.add("flash"); } flashId=null; }
+function tagList(){ let t=[]; try{ t=JSON.parse((S.messages.msg_tags&&S.messages.msg_tags.text)||"[]"); }catch(e){} Object.values(S.nodes).forEach(n=>(n.tags||[]).forEach(x=>{ if(x&&!t.includes(x)) t.push(x); })); return t; }
+async function saveTagList(list){ const m=Object.assign({id:"msg_tags",title:"カテゴリ一覧"},S.messages.msg_tags||{},{text:JSON.stringify(list)}); apply(await gs("saveDoc","messages",m)); }
+const LVC=["#0f7a52","#2a62c9","#8a4fd0","#c3561d","#5d6862"];
+function render(){
+  if(level!=="root"&&!S.nodes[level]) level="root";
+  renderCrumbs();
+  const sd=$("#side"), d=depth(level), list=kids(level), ln=S.nodes[level];
+  const all=Object.values(S.nodes).filter(n=>n.id!=="root");
+  const leaves=all.filter(n=>n.type!=="menu");
+  const w=all.filter(n=>n.status==="要確認").length, tl=tagList(), tc=t=>leaves.filter(n=>(n.tags||[]).includes(t)&&(!typeF||n.type===typeF)).length;
+  $("#typeF").value=typeF||"";
+  $("#ftabs").innerHTML=`<button class="ft ${!filter?"on":""}" data-f="">すべて</button><button class="ft ${filter==="events"?"on":""}" data-f="events">📅 開催大会<span class="c">${activeEvents().length}</span></button><button class="ft warn ${w?"":"zero"} ${filter==="warn"?"on":""}" data-f="warn">⚠ 要確認<span class="c">${w}</span></button><button class="ft ${filter==="settings"?"on":""}" data-f="settings">⚙ 設定</button>`;
+  $("#tagF").innerHTML=`<option value="">カテゴリ：すべて</option>`+tl.map(t=>`<option value="tag:${esc(t)}" ${filter==="tag:"+t?"selected":""}>${esc(t)}（${tc(t)}）</option>`).join("");
+  $("#ftabs").querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{ if(!leave())return; filter=b.dataset.f||null; render(); });
+  let h="";
+  if(filter==="settings"){
+    const chs=Object.values(S.channels), MS=Object.values(S.messages).filter(m=>!["msg_tags","msg_event_fields"].includes(m.id));
+    h+=`<div class="sbTitle"><div class="big">⚙ 設定</div><div class="sub">案内先のLINEのリンクや、共通で使うメッセージを編集します。</div></div>`;
+    h+=`<div class="secttl">🌐 共通情報・ブランド別情報</div><button class="sb" id="commonSettings">メディア申請・写真アルバム・年齢制限</button>`;
+    h+=`<div class="secttl">🔗 案内先のLINE（他の公式LINE）</div>`;
+    chs.forEach(c=>{ h+=`<div class="srow"><button class="sb ${sel==="ch:"+c.id?"on":""}" data-ch="${esc(c.id)}"><span class="lb fitem">${esc(c.name||c.id)}<small>${esc(c.url||"URL未入力")}</small></span></button></div>`; });
+    h+=`<button class="tadd" id="chAdd">＋ LINE窓口を追加</button>`;
+    h+=`<div class="secttl">💬 共通メッセージ</div>`;
+    MS.forEach(m=>{ h+=`<div class="srow"><button class="sb ${sel==="msg:"+m.id?"on":""}" data-msg="${esc(m.id)}"><span class="lb fitem">${esc(m.title||m.id)}<small>${esc((m.text||"").split("\n")[0])}</small></span></button></div>`; });
+    sd.innerHTML=h; doFlash(sd);
+    $("#commonSettings").onclick=()=>{if(!leave())return;sel="common";renderEditor();};
+    sd.querySelectorAll("[data-ch]").forEach(b=>b.onclick=()=>{ if(!leave())return; sel="ch:"+b.dataset.ch; render(); });
+    sd.querySelectorAll("[data-msg]").forEach(b=>b.onclick=()=>{ if(!leave())return; sel="msg:"+b.dataset.msg; render(); });
+    $("#chAdd").onclick=async()=>{ if(!leave())return; const name=await modal({title:"🔗 LINE窓口を追加",input:{label:"窓口名（例：JOPT Gamesお問い合わせ）",value:""},ok:"追加する"}); if(!name) return;
+      const c={id:"ch_"+Date.now().toString(36),name,url:"",scope:"",status:"確認済",note:""};
+      try{ apply(await gs("saveDoc","channels",c)); sel="ch:"+c.id; render(); toast("追加しました。右側でリンク（URL）を入力してください"); }catch(e){ toast("追加できませんでした"); } };
+    return renderEditor();
+  }
+  if(filter==="events"){
+    const evs=Object.values(S.events).sort((a,b)=>(a.order||0)-(b.order||0));
+    h+=`<div class="sbTitle"><div class="big">📅 開催大会</div><div class="sub">開催中・開催予定の大会を登録します。「日程・会場」などのボタンは、ここの内容を使って自動で返信します。</div></div>`;
+    evs.forEach(e=>{ h+=`<div class="srow"><button class="sb ${sel==="ev:"+e.id?"on":""} ${e.active?"":"evoff"}" data-ev="${esc(e.id)}"><span class="lb fitem">${esc(e.name||"（大会名なし）")}<small>${esc(e.dates||"日程未入力")}</small></span><span class="meta">${e.active?"LINEに表示中":"非表示"}</span></button></div>`; });
+    if(!evs.length) h+=`<div class="empty">まだ大会が登録されていません</div>`;
+    h+=`<button class="tadd" id="evAdd" style="padding:9px">＋ 大会を追加</button>`;
+    sd.innerHTML=h; doFlash(sd);
+    sd.querySelectorAll("[data-ev]").forEach(b=>b.onclick=()=>{ if(!leave())return; sel="ev:"+b.dataset.ev; tab="edit"; render(); });
+    $("#evAdd").onclick=async()=>{ if(!leave())return; const name=await modal({title:"📅 大会を追加",input:{label:"大会名（例：JOPT 2026 Tokyo #04）",value:""},ok:"追加する"}); if(!name) return;
+      const e={id:"ev_"+Date.now().toString(36),order:Object.keys(S.events).length+1,active:true,name,dates:"",venue:"",guide_url:"",receipt_form:"",receipt_deadline:"",age_note:"",photo_url:"",media_form:"",note:""};
+      try{ apply(await gs("saveDoc","events",e)); sel="ev:"+e.id; render(); toast("追加しました。右側で日程・会場などを入力してください"); }catch(err){ toast("追加できませんでした"); } };
+    return renderEditor();
+  }
+  if(filter||typeF){
+    const tg=filter&&filter.startsWith("tag:")?filter.slice(4):null;
+    const hits=(filter==="warn"?all:leaves).filter(n=>(filter!=="warn"||n.status==="要確認")&&(!tg||(n.tags||[]).includes(tg))&&(!typeF||n.type===typeF));
+    const title=[filter==="warn"?"⚠ 要確認":tg?esc(tg):"", typeF?TNAME[typeF]:""].filter(Boolean).join(" × ");
+    h+=`<div class="fhead"><span>${title}　${hits.length}件</span><button id="fClear">× すべてに戻る</button></div>`;
+    hits.forEach(n=>{ const p=anc(n.id).slice(0,-1).map(x=>S.nodes[x].label).join(" › ")||"トップ";
+      h+=`<div class="srow"><button class="sb ${sel===n.id?"on":""}" data-fid="${esc(n.id)}">${n.status==="要確認"?'<span class="wdot"></span>':""}<span class="lb fitem">${esc(n.label)}<small>${esc(p)}</small></span><span class="meta">${GO[n.type]||""}</span></button></div>`; });
+    if(!hits.length) h+=`<div class="empty">該当するボタンはありません</div>`;
+    sd.innerHTML=h; doFlash(sd);
+    $("#fClear").onclick=()=>{ filter=null; typeF=null; render(); };
+    sd.querySelectorAll("[data-fid]").forEach(b=>b.onclick=()=>{ if(!leave())return; const id=b.dataset.fid; const keep=filter, kt=typeF; go(id); filter=keep; typeF=kt; render(); });
+    return renderEditor();
+  }
+  if(level!=="root"){ const p=parentOf(level); h+=`<button class="sbBack" id="sbBack">‹ ${esc(p==="root"?"トップ":S.nodes[p].label)} に戻る</button>`; }
+  h+=`<div class="sbTitle"><div class="big"><span class="lvchip" style="background:${LVC[Math.min(d,4)]}">${d+1}回目の選択</span>${level==="root"?"最初の選択ボタン":esc(ln.label)}</div>
+      <div class="sub">${level==="root"?"お客様がトークを開いた時に出る選択ボタン":`「${esc(ln.label)}」を選んだ後に出る選択ボタン`}</div>
+      <button class="lnk" id="sbEdit">✎ ${level==="root"?"最初の案内文を編集":"このボタン自体を編集"}</button></div>`;
+  if(!list.length) h+=`<div class="empty">まだ選択ボタンがありません。<br>下の「＋ ここに選択ボタンを追加」から作成してください。</div>`;
+  list.forEach(n=>{
+    const isMenu=n.type==="menu";
+    h+=`<div class="srow"><button class="sb ${sel===n.id?"on":""}" data-id="${esc(n.id)}">${n.status==="要確認"?'<span class="wdot" title="要確認"></span>':""}<span class="lb">${esc(n.label||"（名前なし）")}</span>${isMenu?`<span class="meta">${kids(n.id).length}個</span><span class="chev">›</span>`:`<span class="meta">${n.per_event?"📅 ":""}${GO[n.type]||""}</span>`}</button></div>`;
+  });
+  h+=`<button class="tadd" data-add="${esc(level)}" style="padding:9px">＋ ここに選択ボタンを追加</button>`;
+  sd.innerHTML=h; doFlash(sd);
+  const bk=$("#sbBack"); if(bk) bk.onclick=()=>{ if(!leave())return; const p=parentOf(level); sel=null; level=p; addingAt=null; render(); };
+  $("#sbEdit").onclick=()=>{ if(!leave())return; if(level==="root") go("__root"); else go(level); };
+  sd.querySelectorAll(".sb").forEach(b=>b.onclick=()=>{ if(!leave())return; const n=S.nodes[b.dataset.id];
+    if(n.type==="menu"){ level=n.id; sel=null; addingAt=null; tab="edit"; render(); } else go(n.id); });
+  sd.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{ if(leave()) chooseAdd(b.dataset.add); });
+  renderEditor();
+}
+function chooseAdd(parent){
+  const where=parent==="root"?"最初の選択ボタン（トークを開いた時）":`「${S.nodes[parent].label}」を選んだ後の選択ボタン（${depth(parent)+1}回目の選択）`;
+  const bg=document.createElement("div"); bg.className="mbg"; let kind="answer";
+  bg.innerHTML=`<div class="mbox"><h3>＋ 選択ボタンを追加</h3><p>追加する場所：<b>${esc(where)}</b></p>
+    <label>ボタン名（20文字まで）</label><input id="cName" maxlength="20" placeholder="例：日程・会場">
+    <label>このボタンを押したら？</label>
+    <div class="choice"><button data-k="answer" class="on"><b>💬 返信する</b>返信メッセージを送って終わり</button><button data-k="menu"><b>▶ さらに選択ボタンを出す</b>次の選択ボタンを表示</button></div>
+    <div class="mbtns"><button class="btn sec" data-m="no">キャンセル</button><button class="btn pri" data-m="ok">追加する</button></div></div>`;
+  document.body.appendChild(bg);
+  const close=()=>bg.remove();
+  bg.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{ kind=b.dataset.k; bg.querySelectorAll("[data-k]").forEach(x=>x.classList.toggle("on",x===b)); });
+  bg.querySelector("[data-m=no]").onclick=close; bg.onclick=e=>{ if(e.target===bg) close(); };
+  const inp=bg.querySelector("#cName"); inp.focus();
+  bg.querySelector("[data-m=ok]").onclick=async()=>{
+    const name=inp.value.trim(); if(!name){ inp.focus(); toast("ボタン名を入力してください"); return; }
+    const sib=kids(parent);
+    const n={id:"n_"+Date.now().toString(36),parent,order:(sib.length?Math.max(...sib.map(s=>s.order||0)):0)+1,label:name,type:kind,
+      body:kind==="menu"?"お選びください。":"",channel:null,handoff:kind==="menu"?null:"H_GENERAL",follow:kind!=="menu",links:[],status:"要確認",review:"新しく追加したボタンです",evidence:""};
+    if(kind!=="menu"){ const sibT=(sib.find(x=>(x.tags||[]).length)||{}).tags; const ft=filter&&filter.startsWith("tag:")?[filter.slice(4)]:null; n.tags=(sibT||ft||[]).slice(); }
+    try{ close(); toast("追加中…"); apply(await gs("saveDoc","nodes",n)); filter=null; go(n.id);
+      toast(kind==="menu"?"追加しました。「＋ この質問に選択ボタンを追加」で次の選択ボタンを作れます":"追加しました。返信メッセージを入力して保存してください"); }
+    catch(e){ toast("追加できませんでした"); }
+  };
+  inp.onkeydown=e=>{ if(e.key==="Enter") bg.querySelector("[data-m=ok]").click(); if(e.key==="Escape") close(); };
+}
+function wireAsk(n){ const b=$("#askChk"); if(!b) return; b.onclick=async()=>{ if(!leave()) return;
+  const isW=n.status==="要確認";
+  const t=await modal({title:isW?"✎ 確認してほしいこと":"⚠ 確認をお願いする",text:"このボタンが「⚠ 要確認」の一覧に表示され、ほかの担当者が内容を確認・修正できます。",input:{label:"確認してほしいこと（例：金額が最新か確認してください）",value:isW?(n.review||""):""},ok:isW?"保存する":"確認待ちにする"});
+  if(t===null) return;
+  try{ apply(await gs("saveDoc","nodes",Object.assign({},n,{status:"要確認",review:t||"内容が正しいか確認してください"}))); toast("確認待ちの項目に追加しました"); render(); }catch(e){ toast("保存できませんでした"); } }; }
+function toolbar(n){ return `<div class="edtools"><button id="t_under">＋ この質問に選択ボタンを追加</button></div>`; }
+function wireToolbar(n){ const a=$("#t_same"), b=$("#t_under"); if(a) a.onclick=()=>{ if(leave()) chooseAdd(n.parent||"root"); }; if(b) b.onclick=()=>{ if(leave()) addUnder(n.id); }; }
+async function deleteNode(n){
+  const all=[]; const walk=id=>{ kids(id).forEach(c=>{ walk(c.id); }); all.push(id); }; walk(n.id);
+  const msg=all.length>1?`「${n.label}」と、その下のボタン ${all.length-1}個 をすべて削除します。よろしいですか？`:`「${n.label}」を削除しますか？`;
+  if(!await modal({title:"🗑 ボタンを削除",text:msg+"\n\n※ 間違えて削除した場合は、管理者に連絡すれば元に戻せます。",ok:"削除する",danger:true})) return;
+  try{ toast("削除中…"); for(const id of all) apply(await gs("deleteDoc","nodes",id)); dirty=false; sel=null; level=(n.parent&&S.nodes[n.parent])?n.parent:"root"; render(); toast("削除しました"); }
+  catch(e){ toast("削除できませんでした"); render(); }
+}
+
+/* ---------- 右：編集 ---------- */
+function head(title,id){
+  const p=id&&id!=="__root"?anc(id).map(x=>S.nodes[x].label).join(" › "):"トップ";
+  const sb=Date.now()-lastSaved<4000?`<div class="savedbar"><span class="ck">✓</span>保存しました<small>スプレッドシートに反映済み・${new Date(lastSaved).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"})}</small></div>`:"";
+  return `${sb}<h2>${title}</h2><div class="path">${esc(p)}</div>`;
+}
+function tabs(){ return `<div class="tabs"><button class="tab ${tab==="edit"?"on":""}" data-tab="edit">✏️ 編集</button><button class="tab ${tab==="pv"?"on":""}" data-tab="pv">📱 LINEでの見え方</button></div>`; }
+function wireTabs(rerender){ document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{ tab=b.dataset.tab; rerender(); }); }
+function renderEditor(){
+  const el=$("#ed");
+  if(!sel){ el.className="ed idle"; el.innerHTML=`<div>👈 左からボタンを選んでください<br><small>「›」の付いたボタンを押すと、その次の選択ボタンが表示されます。</small></div>`; return; }
+  el.className="ed";
+  if(sel==="common") return commonEditor(el);
+  if(sel==="__root") return rootEditor(el);
+  if(String(sel).startsWith("ev:")) return eventEditor(el,S.events[sel.slice(3)]);
+  if(String(sel).startsWith("ch:")) return channelEditor(el,S.channels[sel.slice(3)]);
+  if(String(sel).startsWith("msg:")) return messageEditor(el,S.messages[sel.slice(4)]);
+  const n=S.nodes[sel]; if(!n){ sel=null; return renderEditor(); }
+  if(n.type==="menu") return menuEditor(el,n);
+  return leafEditor(el,n);
+}
+function rootEditor(el){
+  const m=S.messages.msg_root||{id:"msg_root",title:"最初の案内文",text:""};
+  let text=m.text;
+  const draw=()=>{
+    el.innerHTML=head("最初の案内文","__root")+tabs()+(tab==="edit"?
+      `<div class="f"><label>トークを開いた時、最初の選択ボタンの上に送る文</label><textarea id="r_text">${esc(text)}</textarea></div><div class="actions"><button class="btn pri" id="r_save">保存</button></div>`:
+      `<div class="chat"><div class="bub">${esc(text)}</div><div class="qr">${kids("root").map(k=>`<span>${esc(k.label)}</span>`).join("")}</div></div>`);
+    wireTabs(draw);
+    if(tab==="edit"){ $("#r_text").addEventListener("input",e=>{text=e.target.value;dirty=true;});
+      $("#r_save").onclick=async()=>{ try{ apply(await gs("saveDoc","messages",Object.assign({},m,{text}))); dirty=false; toast("保存しました"); render(); }catch(e){ toast("保存できませんでした"); } }; }
+  }; draw();
+}
+function menuEditor(el,n){
+  const ch=kids(n.id); let d={label:n.label,body:n.body,ok:false};
+  const draw=()=>{
+    el.innerHTML=head(`「${esc(n.label)}」を押した時（さらに選択ボタンを出す）`,n.id)+toolbar(n)+tabs()+(tab==="edit"?`
+      <div class="f"><label>ボタン名<span class="hint">20文字まで</span></label><input type="text" id="m_label" maxlength="20" value="${esc(d.label)}"></div>
+      <div class="f"><label>押した時に送る案内文<span class="hint">選択ボタンの上に表示</span></label><textarea id="m_body" style="min-height:90px">${esc(d.body)}</textarea></div>
+      ${n.status==="要確認"?`<div class="warnbox"><b>要確認</b>${n.review?"："+esc(n.review):""}<label><input type="checkbox" id="e_ok" ${d.ok?"checked":""}>確認しました</label></div>`:""}
+      <div class="actions"><button class="btn pri" id="m_save">保存</button></div>${n.status!=="要確認"?'<button class="askbtn" id="askChk">⚠ 確認をお願いする</button>':'<button class="askbtn" id="askChk">✎ 確認事項を編集</button>'}
+      <details class="more"><summary>その他の操作</summary><div class="morebox">
+        <div class="row">並び順：${moveBtns(n)}</div>
+      </div></details>
+      <div class="dangerzone"><span class="hint" style="margin:0">${ch.length?`この下に ${ch.length}個 のボタンがあります`:""}</span><button class="btn danger" id="m_del">🗑 このボタンを削除</button></div>`:
+      `<div class="chat"><div class="bub me">${esc(d.label)}</div><div class="clr"></div><div class="bub">${expand(d.body)}</div><div class="qr">${ch.map(k=>`<span>${esc(k.label)}</span>`).join("")||"<span>（まだボタンがありません）</span>"}</div></div>`);
+    wireTabs(draw); wireToolbar(n);
+    if(tab!=="edit") return;
+    $("#m_label").addEventListener("input",e=>{d.label=e.target.value;dirty=true;});
+    $("#m_body").addEventListener("input",e=>{d.body=e.target.value;dirty=true;});
+    const ok=$("#e_ok"); if(ok) ok.onchange=e=>{d.ok=e.target.checked;dirty=true;};
+    $("#m_save").onclick=async()=>{ if(!d.label.trim()){toast("ボタン名を入力してください");return;}
+      try{ apply(await gs("saveDoc","nodes",Object.assign({},n,{label:d.label.trim(),body:d.body,status:d.ok?"確認済":n.status}))); dirty=false; toast("保存しました"); render(); }catch(e){ toast("保存できませんでした"); } };
+    $("#m_del").onclick=()=>deleteNode(n); wireAsk(n);
+    wireMove(n);
+  }; draw();
+}
+function moveBtns(n){ const sib=kids(n.parent), i=sib.findIndex(x=>x.id===n.id);
+  return `<button class="mv" id="mvUp" ${i<=0?"disabled":""}>↑ 上へ</button><button class="mv" id="mvDn" ${i>=sib.length-1?"disabled":""}>↓ 下へ</button>`; }
+function wireMove(n){
+  const sw=async dir=>{ if(!leave())return; const sib=kids(n.parent), i=sib.findIndex(x=>x.id===n.id), j=i+dir; if(j<0||j>=sib.length)return;
+    const a=Object.assign({},sib[i]), b=Object.assign({},sib[j]); const oa=a.order??i, ob=b.order??j; a.order=ob; b.order=oa===ob?ob-dir:oa;
+    try{ await gs("saveDoc","nodes",b); apply(await gs("saveDoc","nodes",a)); render(); toast("並び順を変えました"); }catch(e){ toast("変更できませんでした"); } };
+  const u=$("#mvUp"), dn=$("#mvDn"); if(u) u.onclick=()=>sw(-1); if(dn) dn.onclick=()=>sw(1);
+}
+function leafEditor(el,n){
+  const fieldsOf=h=>((S.handoffs[h]&&S.handoffs[h].fields)||[]).join("\n");
+  let d={label:n.label,type:n.type,body:n.body,channel:n.channel,handoff:n.handoff,fields:fieldsOf(n.handoff),ok:false,per_event:!!n.per_event,tags:(n.tags||[]).slice()};
+  const chOpts=()=>Object.values(S.channels).map(c=>`<option value="${esc(c.id)}" ${c.id===d.channel?"selected":""}>${esc(c.name)}</option>`).join("");
+  const hOpts=()=>Object.values(S.handoffs).map(h=>`<option value="${esc(h.id)}" ${h.id===d.handoff?"selected":""}>${esc(h.name)}</option>`).join("");
+  const draw=()=>{
+    const showCh=d.type==="redirect", showF=d.type==="handoff"||(d.type==="check"&&d.handoff);
+    const others=Object.values(S.nodes).filter(x=>x.handoff===d.handoff&&x.id!==n.id&&(x.type==="handoff"||x.type==="check")).map(x=>"「"+x.label+"」");
+    el.innerHTML=head(`「${esc(n.label)}」を押した時`,n.id)+toolbar(n)+tabs()+(tab==="edit"?`
+      <div class="f"><label>ボタン名<span class="hint">20文字まで</span></label><input type="text" id="e_label" maxlength="20" value="${esc(d.label)}"></div>
+      <div class="f"><label>カテゴリ<span class="hint">右上の「カテゴリ」で絞り込む時に使います（複数選べます）</span></label>
+        <div class="tagpick">${tagList().map(t=>`<button class="tp ${d.tags.includes(t)?"on":""}" data-tp="${esc(t)}">${d.tags.includes(t)?"✓ ":""}${esc(t)}</button>`).join("")}<button class="tp new" id="tpNew">＋ 新しいカテゴリ</button></div></div>
+      <div class="evbox"><label><input type="checkbox" id="e_pe" ${d.per_event?"checked":""}>📅 大会ごとに内容が変わる</label>
+        <div class="hint" style="margin:2px 0 0 26px">${d.per_event?"お客様に先に大会を選んでもらい、「開催大会」に登録した内容で返信します。返信メッセージの入れたい場所をクリックしてから、下のボタンを押すと差し込めます。":"日程・会場など、大会ごとに違う内容ならチェックしてください。"}</div>
+        ${d.per_event?`<div class="tagins" style="margin-left:26px">${allTags().map(k=>`<button data-ins="${k}">＋${k}</button>`).join("")}</div>`:""}</div>
+      <div class="f"><label><span class="num">1</span>返信メッセージ</label><textarea id="e_body" placeholder="お客様に送る文面">${esc(d.body)}</textarea></div>
+      <div class="f"><label>返信のあと</label><select id="e_type">${Object.entries(TYPES).map(([k,t])=>`<option value="${k}" ${d.type===k?"selected":""}>${t}</option>`).join("")}</select></div>
+      ${showCh?`<div class="f"><label>案内する公式LINE</label><select id="e_ch"><option value="">（選んでください）</option>${chOpts()}</select></div>`:""}
+      ${showF?`<div class="f"><label><span class="num">2</span>${d.type==="check"?"「担当者に相談」を押した時に聞く項目":"続けて、お客様に確認する項目"}<span class="hint">1行に1つ</span></label>
+        <textarea id="e_fields" style="min-height:100px">${esc(d.fields)}</textarea>
+        ${others.length?`<div class="shared">※ ${others.join("")} でも同じ項目を使っています</div>`:""}</div>`:""}
+      ${n.status==="要確認"?`<div class="warnbox"><b>要確認</b>${n.review?"："+esc(n.review):""}<label><input type="checkbox" id="e_ok" ${d.ok?"checked":""}>確認しました</label></div>`:""}
+      <div class="actions"><button class="btn pri" id="e_save">保存</button><button class="btn sec" id="e_cancel">変更を取り消す</button></div>${n.status!=="要確認"?'<button class="askbtn" id="askChk">⚠ 確認をお願いする</button>':'<button class="askbtn" id="askChk">✎ 確認事項を編集</button>'}
+      <details class="more"><summary>その他の操作</summary><div class="morebox">
+        <div class="row">並び順：${moveBtns(n)}</div>
+        ${showF?`<div class="row">引き継ぎ先：<select id="e_h" style="padding:4px 8px;border:1px solid var(--line);border-radius:8px">${hOpts()}</select></div>`:""}
+      </div></details>
+      <div class="dangerzone"><span></span><button class="btn danger" id="e_del">🗑 このボタンを削除</button></div>`:previewHtml(d));
+    wireTabs(draw); wireToolbar(n);
+    if(tab!=="edit") return;
+    const bind=(id,k,re)=>{ const x=$(id); if(!x)return; x.addEventListener(x.tagName==="SELECT"?"change":"input",e=>{ d[k]=e.target.value||null; dirty=true; if(re){ if(k==="handoff") d.fields=fieldsOf(d.handoff); draw(); } }); };
+    bind("#e_label","label"); bind("#e_body","body"); bind("#e_type","type",true); bind("#e_ch","channel"); bind("#e_fields","fields"); bind("#e_h","handoff",true);
+    const ok=$("#e_ok"); if(ok) ok.onchange=e=>{d.ok=e.target.checked;dirty=true;};
+    $("#e_pe").onchange=e=>{ d.per_event=e.target.checked; dirty=true; draw(); };
+    el.querySelectorAll("[data-tp]").forEach(b=>b.onclick=()=>{ const t=b.dataset.tp; d.tags=d.tags.includes(t)?d.tags.filter(x=>x!==t):d.tags.concat([t]); dirty=true; draw(); });
+    $("#tpNew").onclick=async()=>{ const nm=await modal({title:"＋ 新しいカテゴリ",text:"右上の「カテゴリ」に表示される分類を追加します。",input:{label:"カテゴリ名（例：キャンペーン）",value:""},ok:"追加する"}); if(!nm) return;
+      const t=nm.trim(); if(!tagList().includes(t)){ try{ await saveTagList(tagList().concat([t])); }catch(x){ toast("追加できませんでした"); return; } }
+      if(!d.tags.includes(t)) d.tags.push(t); dirty=true; draw(); toast(`「${t}」を追加しました。保存してください`); };
+    el.querySelectorAll("[data-ins]").forEach(b=>b.onclick=()=>{ const ta=$("#e_body"), t="【"+b.dataset.ins+"】", p=ta.selectionStart??ta.value.length;
+      ta.value=ta.value.slice(0,p)+t+ta.value.slice(ta.selectionEnd??p); d.body=ta.value; dirty=true; ta.focus(); ta.selectionStart=ta.selectionEnd=p+t.length; });
+    $("#e_cancel").onclick=()=>{ dirty=false; renderEditor(); };
+    $("#e_save").onclick=async()=>{
+      const out=Object.assign({},n,{label:(d.label||"").trim(),type:d.type,body:d.body||"",channel:d.type==="redirect"?d.channel:(d.type==="check"?n.channel:null),handoff:d.handoff,per_event:!!d.per_event,tags:d.tags,status:d.ok?"確認済":n.status});
+      if(!out.label){ toast("ボタン名を入力してください"); return; }
+      if(out.type==="redirect"&&!out.channel){ toast("案内する公式LINEを選んでください"); return; }
+      if(out.type==="handoff"&&!out.handoff) out.handoff="H_GENERAL";
+      if(busy) return; busy=true; $("#e_save").disabled=true; $("#e_save").textContent="保存中…";
+      try{
+        const nf=(d.fields||"").split(/\n/).map(x=>x.trim()).filter(Boolean), hd=S.handoffs[out.handoff];
+        if(hd&&(out.type==="handoff"||out.type==="check")&&JSON.stringify(hd.fields||[])!==JSON.stringify(nf)) apply(await gs("saveDoc","handoffs",Object.assign({},hd,{fields:nf})));
+        apply(await gs("saveDoc","nodes",out)); dirty=false; toast("保存しました"); render();
+      }catch(e){ toast("保存できませんでした。もう一度お試しください"); }
+      busy=false;
+    };
+    $("#e_del").onclick=()=>deleteNode(n); wireAsk(n);
+    wireMove(n);
+  }; draw();
+}
+async function addUnder(id){
+  const n=S.nodes[id]; if(!n) return;
+  if(n.type==="menu"){ chooseAdd(n.id); return; }
+  const q=await modal({title:`「${esc(n.label)}」に選択ボタンを追加`,
+    flow:`<span>${esc(n.label)}</span>→<b>どの大会？など</b>→<span>選択ボタン</span>`,
+    text:"このボタンを押した時、返信メッセージの代わりに「選択ボタン」が表示されるようになります。\n今の返信メッセージはメモとして残るので、あとで選択ボタンの返信に使えます。",
+    input:{label:"選択ボタンの上に送る質問文",value:"どの大会についてのお問い合わせですか？"},ok:"次へ（ボタンを追加する）"});
+  if(q===null) return;
+  const out=Object.assign({},n,{type:"menu",body:q||"お選びください。",channel:null,handoff:null,follow:false,status:"要確認",review:n.body?"元の返信メッセージ：\n"+n.body:""});
+  try{ apply(await gs("saveDoc","nodes",out)); go(n.id); chooseAdd(n.id); }catch(e){ toast("変更できませんでした"); }
+}
+function eventEditor(el,e){
+  if(!e){ sel=null; return renderEditor(); }
+  const F=[["name","大会名",""],["dates","日程",""],["venue","会場","会場名と住所"],["guide_url","プレイヤーズガイドURL",""],["receipt_form","領収書申請フォームURL",""],["receipt_deadline","領収書の送付期限",""],["age_note","入場制限の追加案内（該当する場合のみ）","本大会に追加の入場制限がある場合のみ入力"]];
+  let d=Object.assign({},e); const ex=extraOf(e);
+  const users=Object.values(S.nodes).filter(n=>n.per_event).map(n=>"「"+n.label+"」");
+  el.innerHTML=`${Date.now()-lastSaved<4000?`<div class="savedbar"><span class="ck">✓</span>保存しました<small>スプレッドシートに反映済み</small></div>`:""}<h2>📅 ${esc(e.name||"大会")}</h2><div class="path">開催大会</div>
+    <div class="evbox" style="margin-top:6px"><label><input type="checkbox" id="v_active" ${d.active?"checked":""}>LINEに表示する（開催中・開催予定）</label><div class="hint" style="margin:2px 0 0 26px">大会が終わったらチェックを外してください。お客様の選択肢から消えます。</div></div>
+    <div class="hint" style="margin:0 0 12px">📋 ボタンを押すと【項目名】がコピーされます。ボタンの返信メッセージに貼り付けると、お客様にはこの大会の内容に置き換わって表示されます。</div>
+    <div class="f"><label>ブランド</label><select id="v_brand"><option value="JOPT" ${eventBrand(e)==='JOPT'?'selected':''}>JOPT</option><option value="SPADIE" ${eventBrand(e)==='SPADIE'?'selected':''}>SPADIE</option></select></div>
+    <div class="infobox">写真アルバムはブランド別の共通設定を使用します。メディア申請と年齢制限の基本ルールは「設定」で確認できます。入場制限の追加案内が空欄の場合も、共通の年齢制限は適用されます。</div>
+    ${F.map(([k,l,ph])=>{ const tag=Object.keys(EVF).find(x=>EVF[x]===k); return `<div class="f"><div class="flab"><b>${l}</b><button class="cp" data-cp="【${tag}】">📋 【${tag}】をコピー</button></div><input type="text" data-k="${k}" value="${esc(d[k]||"")}" placeholder="${esc(ph)}"></div>`; }).join("")}
+    ${customFields().map(c=>`<div class="f"><div class="flab"><b>${esc(c)}<button class="rmf" data-rmf="${esc(c)}">× 項目を削除</button></b><button class="cp" data-cp="【${esc(c)}】">📋 【${esc(c)}】をコピー</button></div><input type="text" data-x="${esc(c)}" value="${esc(ex[c]||"")}"></div>`).join("")}
+    <button class="addfield" id="v_addf">＋ 項目を追加（例：受付時間、駐車場）</button>
+    <div class="hint" style="margin:0 0 12px">この内容を使うボタン：${users.join("") || "なし"}</div>
+    <div class="actions"><button class="btn pri" id="v_save">保存</button></div>
+    <div class="dangerzone"><span></span><button class="btn danger" id="v_del">🗑 この大会を削除</button></div>`;
+  el.querySelectorAll("[data-k]").forEach(i=>i.addEventListener("input",()=>{ d[i.dataset.k]=i.value; dirty=true; }));
+  el.querySelectorAll("[data-x]").forEach(i=>i.addEventListener("input",()=>{ ex[i.dataset.x]=i.value; dirty=true; }));
+  el.querySelectorAll("[data-cp]").forEach(b=>b.onclick=()=>copyText(b.dataset.cp));
+  const saveFields=async list=>{ const m=Object.assign({id:"msg_event_fields",title:"開催大会の追加項目"},S.messages.msg_event_fields||{},{text:JSON.stringify(list)}); apply(await gs("saveDoc","messages",m)); };
+  $("#v_addf").onclick=async()=>{ if(!leave())return;
+    const name=await modal({title:"＋ 項目を追加",text:"すべての大会に共通の項目として追加されます。\n大会ごとに内容を入力し、返信メッセージでは【項目名】で使えます。",input:{label:"項目名（例：受付時間）",value:""},ok:"追加する"});
+    if(!name) return; const nm=name.replace(/[【】]/g,"").trim(); if(!nm) return;
+    if(allTags().includes(nm)){ toast("同じ名前の項目があります"); return; }
+    try{ await saveFields(customFields().concat([nm])); renderEditor(); toast(`「${nm}」を追加しました。内容を入力して保存してください`); }catch(x){ toast("追加できませんでした"); } };
+  el.querySelectorAll("[data-rmf]").forEach(b=>b.onclick=async()=>{ const nm=b.dataset.rmf;
+    const used=Object.values(S.nodes).filter(n=>(n.body||"").includes("【"+nm+"】")).map(n=>"「"+n.label+"」");
+    if(!await modal({title:"項目を削除",text:`「${esc(nm)}」をすべての大会から削除しますか？`+(used.length?`\n\n⚠ 次のボタンの返信メッセージで使われています：${used.join("")}`:""),ok:"削除する",danger:true})) return;
+    try{ await saveFields(customFields().filter(x=>x!==nm)); renderEditor(); toast("削除しました"); }catch(x){ toast("削除できませんでした"); } });
+  $("#v_active").onchange=x=>{ d.active=x.target.checked; dirty=true; };
+  $("#v_brand").onchange=x=>{ d.brand=x.target.value;dirty=true; };
+  $("#v_save").onclick=async()=>{ if(!(d.name||"").trim()){ toast("大会名を入力してください"); return; }
+    d.extra=JSON.stringify(ex);
+    try{ apply(await gs("saveDoc","events",d)); dirty=false; toast("保存しました"); render(); }catch(x){ toast("保存できませんでした"); } };
+  $("#v_del").onclick=async()=>{ if(!await modal({title:"🗑 大会を削除",text:`「${esc(e.name)}」を削除しますか？\n終わった大会は、削除せず「LINEに表示する」のチェックを外すだけでもOKです。`,ok:"削除する",danger:true})) return;
+    try{ apply(await gs("deleteDoc","events",e.id)); dirty=false; sel=null; toast("削除しました"); render(); }catch(x){ toast("削除できませんでした"); } };
+}
+function sbar(){ return Date.now()-lastSaved<4000?`<div class="savedbar"><span class="ck">✓</span>保存しました<small>スプレッドシートに反映済み</small></div>`:""; }
+function commonEditor(el){
+  const rows=[['media_form_url','メディアパス申請フォーム（全大会共通）'],['photo_album_url_jopt','写真アルバム（JOPT共通）'],['photo_album_url_spadie','写真アルバム（SPADIE共通）']];
+  const values=Object.fromEntries(rows.map(([key])=>[key,commonValue(key)]));
+  const age=S.nodes.entry_age||Object.values(S.nodes).find(n=>n.label==='年齢制限');
+  el.innerHTML=`${sbar()}<h2>共通情報・ブランド別情報</h2><div class="path">設定</div><p class="hint">ここで保存したURLをすべての大会で使用します。大会ごとの登録は不要です。</p>${rows.map(([key,label])=>`<div class="f"><label>${label}</label><input type="url" data-common="${key}" value="${esc(values[key])}"><button class="cp" data-copy="{{${key}}}">差し込み用の文字列をコピー</button></div>`).join('')}<div class="actions"><button class="btn pri" id="commonSave">保存</button></div><h3>年齢制限（全大会共通）</h3><p class="hint">基本ルールは共通の回答で管理します。特定の日の入場制限などは「開催大会」の追加案内に入力してください。</p>${age?`<div class="infobox" style="white-space:pre-wrap">${esc(age.body||'')}</div><button class="btn sec" id="commonAge">共通の年齢制限を編集</button>`:''}`;
+  el.querySelectorAll('[data-common]').forEach(i=>i.oninput=()=>{values[i.dataset.common]=i.value;dirty=true;});
+  el.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>copyText(b.dataset.copy));
+  if(age)$('#commonAge').onclick=()=>{if(leave())go(age.id);};
+  $('#commonSave').onclick=async()=>{for(const [key] of rows){try{const u=new URL(values[key]);if(u.protocol!=='https:')throw Error();}catch(e){toast('https:
+    const button=$('#commonSave');button.disabled=true;
+    try{for(const [key,label] of rows)apply(await gs('saveDoc','vars',Object.assign({},S.vars[key]||{},{key,value:values[key],valid_until:'',note:label})));dirty=false;toast('保存しました');renderEditor();}catch(e){toast('保存できませんでした');button.disabled=false;}
+  };
+}
+function channelEditor(el,c){
+  if(!c){ sel=null; return renderEditor(); }
+  const d=Object.assign({},c), users=Object.values(S.nodes).filter(n=>n.channel===c.id||(n.body||"").includes("{{"+c.id+"}}"));
+  el.innerHTML=`${sbar()}<h2>🔗 ${esc(c.name||"LINE窓口")}</h2><div class="path">設定 › 案内先のLINE</div>
+    <div class="f"><label>窓口名</label><input type="text" data-k="name" value="${esc(d.name||"")}"></div>
+    <div class="f"><label>リンク（URL）<span class="hint">LINEの友だち追加URL（https:
+    <div class="f"><label>この窓口で対応するお問い合わせ</label><textarea data-k="scope" style="min-height:70px">${esc(d.scope||"")}</textarea></div>
+    <div class="f"><label>メモ</label><textarea data-k="note" style="min-height:60px">${esc(d.note||"")}</textarea></div>
+    <div class="hint" style="margin:0 0 12px">この窓口を案内しているボタン：${users.map(n=>"「"+esc(n.label)+"」").join("")||"なし"}</div>
+    <div class="actions"><button class="btn pri" id="c_save">保存</button>${d.url?`<a class="btn sec" href="${esc(d.url)}" target="_blank" rel="noopener">リンクを開いて確認</a>`:""}</div>
+    <div class="dangerzone"><span class="hint" style="margin:0">${users.length?"使われているため削除できません":""}</span><button class="btn danger" id="c_del" ${users.length?"disabled":""}>🗑 この窓口を削除</button></div>`;
+  el.querySelectorAll("[data-k]").forEach(i=>i.addEventListener("input",()=>{ d[i.dataset.k]=i.value; dirty=true; }));
+  $("#c_save").onclick=async()=>{ if(!(d.name||"").trim()){ toast("窓口名を入力してください"); return; }
+    try{ apply(await gs("saveDoc","channels",d)); dirty=false; toast("保存しました"); render(); }catch(e){ toast("保存できませんでした"); } };
+  $("#c_del").onclick=async()=>{ if(users.length) return; if(!await modal({title:"🗑 窓口を削除",text:`「${esc(c.name)}」を削除しますか？`,ok:"削除する",danger:true})) return;
+    try{ apply(await gs("deleteDoc","channels",c.id)); dirty=false; sel=null; toast("削除しました"); render(); }catch(e){ toast("削除できませんでした"); } };
+}
+const MSG_HELP={msg_root:"お客様がトークを開いた時、最初の選択ボタンの上に送ります。",msg_followup:"自動返信のあとに「解決しましたか？」と聞く文です。",msg_resolved:"お客様が「解決した」を押した時に送ります。",msg_handoff_in:"担当者につなぐ時（営業時間内）に送ります。{{fields}} の部分に、お客様に確認する項目が入ります。",msg_handoff_out:"担当者につなぐ時（営業時間外）に送ります。{{fields}} の部分に、お客様に確認する項目が入ります。",msg_ticket_open:"担当者が対応中に、お客様が追加でメッセージを送った時に返します。",msg_freetext:"お客様がボタンを押さずに文字を送った時に返します。"};
+function messageEditor(el,m){
+  if(!m){ sel=null; return renderEditor(); }
+  let text=m.text||"";
+  el.innerHTML=`${sbar()}<h2>💬 ${esc(m.title||m.id)}</h2><div class="path">設定 › 共通メッセージ</div>
+    <div class="infobox">${esc(MSG_HELP[m.id]||"共通で使うメッセージです。")}</div>
+    <div class="f"><label>文面</label><textarea id="g_text">${esc(text)}</textarea></div>
+    <div class="actions"><button class="btn pri" id="g_save">保存</button></div>`;
+  $("#g_text").addEventListener("input",e=>{ text=e.target.value; dirty=true; });
+  $("#g_save").onclick=async()=>{ try{ apply(await gs("saveDoc","messages",Object.assign({},m,{text}))); dirty=false; toast("保存しました"); render(); }catch(e){ toast("保存できませんでした"); } };
+}
+/* ---------- LINEで試す ---------- */
+const SIM={log:[],qr:[]};
+function simOpen(){ $("#sim").hidden=false; $("#simbg").hidden=false; simStart(); }
+function simClose(){ $("#sim").hidden=true; $("#simbg").hidden=true; }
+function simBot(t){ SIM.log.push({who:"bot",html:expand(t)}); }
+function simMe(t){ SIM.log.push({who:"me",html:esc(t)}); }
+function simDraw(){
+  const last=SIM.log[SIM.log.length-1];
+  if(last&&last.who==='bot') last.choices=SIM.qr.slice();
+  let html='';
+  for(let i=0;i<SIM.log.length;i++){
+    const m=SIM.log[i];
+    if(m.who==='me'){html+=`<div class="bub me">${m.html}</div><div class="clr"></div>`;continue;}
+    const parts=[m.html];let tail=m,index=i;
+    while(i+1<SIM.log.length&&SIM.log[i+1].who==='bot'){tail=SIM.log[++i];index=i;parts.push(tail.html);}
+    const choices=tail.choices||[];
+    html+=`<div class="simflex"><div class="simflextext">${parts.join('\n\n')}</div>${choices.length?`<div class="simflexactions">${choices.map((q,k)=>`<button data-message="${index}" data-q="${k}" class="${q.sub?'sub':q.label==='解決した'?'resolved':''}">${esc(q.label)}</button>`).join('')}</div>`:''}</div><div class="clr"></div>`;
+  }
+  const c=$("#simChat");c.innerHTML=html;$("#simQr").innerHTML='';
+  c.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const q=SIM.log[+b.dataset.message].choices[+b.dataset.q];simMe(q.label);q.go();simDraw();});
+  c.scrollTop=c.scrollHeight;
+}
+const TOP={label:"最初に戻る",sub:true,go:()=>simMenu("root")};
+function simMenu(id){
+  if(id==="root"){ simBot((S.messages.msg_root&&S.messages.msg_root.text)||"お選びください。"); }
+  else simBot(S.nodes[id].body||"お選びください。");
+  SIM.qr=kids(id).map(n=>({label:n.label,go:()=>simNode(n)})); if(id!=="root") SIM.qr.push(TOP);
+}
+function simFields(h){ const hd=S.handoffs[h]; const t=(S.messages.msg_handoff_in&&S.messages.msg_handoff_in.text)||"担当者が確認します。\n{{fields}}"; return t.replace("{{fields}}",((hd&&hd.fields)||[]).map(x=>"・"+x+"：").join("\n")); }
+function simNode(n,ev){
+  if(n.type==="menu") return simMenu(n.id);
+  if(n.per_event&&!ev){ const evs=activeEvents();
+    if(evs.length>1){ simBot("どの大会についてのお問い合わせですか？"); SIM.qr=evs.map(e=>({label:e.name,go:()=>simNode(n,e)})).concat([TOP]); return; }
+    ev=evs[0]; }
+  let body=n.per_event?expandEv(n.body,ev):n.body;
+  if(n.type==="redirect"&&n.channel&&!/\{\{\s*ch_/.test(body||"")) body=(body?body+"\n":"")+"{{"+n.channel+"}}";
+  simBot(body||"（返信メッセージが未入力です）");
+  if(n.type==="handoff"){ simBot(simFields(n.handoff)); SIM.qr=[TOP]; return; }
+  if(n.type==="redirect"){ SIM.qr=[TOP]; return; }
+  simBot((S.messages.msg_followup&&S.messages.msg_followup.text)||"ご不明点は解決しましたか？");
+  SIM.qr=[{label:"解決した",go:()=>{ simBot((S.messages.msg_resolved&&S.messages.msg_resolved.text)||"ありがとうございました。"); SIM.qr=[TOP]; }}];
+  if(n.handoff) SIM.qr.push({label:"担当者に相談",go:()=>{ simBot(simFields(n.handoff)); SIM.qr=[TOP]; }});
+  SIM.qr.push(TOP);
+}
+function simStart(){ SIM.log=[]; simMenu("root"); simDraw(); }
+function previewHtml(d){
+  const card=(text,labels=[])=>`<div class="simflex"><div class="simflextext">${text}</div>${labels.length?`<div class="simflexactions">${labels.map(x=>`<span class="${x==='最初に戻る'?'sub':x==='解決した'?'resolved':''}">${esc(x)}</span>`).join('')}</div>`:''}</div>`;
+  let h=`<div class="chat"><div class="bub me">${esc(d.label||'（ボタン名）')}</div><div class="clr"></div>`;
+  let body=d.body||'';
+  if(d.per_event){const evs=activeEvents();
+    if(!evs.length)return h+card('⚠ 「開催大会」にLINE表示中の大会がありません。上の「📅 開催大会」から登録してください。')+'</div>';
+    if(evs.length>1)h+=card('どの大会についてのお問い合わせですか？',evs.map(e=>e.name))+`<div class="bub me">${esc(evs[0].name)}</div><div class="clr"></div>`;
+    body=expandEv(body,evs[0]);}
+  if(d.type==='redirect'&&d.channel&&S.channels[d.channel]&&!/\{\{\s*ch_/.test(body))body+=(body?'\n':'')+'{{'+d.channel+'}}';
+  const fl=(d.fields||'').split(/\n/).map(x=>x.trim()).filter(Boolean);
+  const fm=()=>{const t=(S.messages.msg_handoff_in&&S.messages.msg_handoff_in.text)||'担当者が確認してご返信いたします。\n{{fields}}';return esc(t).replace('{{fields}}',esc(fl.map(x=>'・'+x+'：').join('\n')));};
+  let text=expand(body)||'（返信メッセージ）',choices=[];
+  if(d.type==='handoff')text+='\n\n'+fm();
+  else if(d.type==='answer'||d.type==='check'){text+='\n\n'+expand((S.messages.msg_followup&&S.messages.msg_followup.text)||'ご不明点は解決しましたか？');choices=['解決した'];if(d.handoff)choices.push('担当者に相談');}
+  choices.push('最初に戻る');h+=card(text,choices);
+  if(d.type==='check'&&d.handoff)h+=`<div style="color:#fff;margin-top:10px;font-size:12px">「担当者に相談」を押すと：</div>`+card(fm());
+  return h+'</div>';
+}
+
+/* ---------- 検索 ---------- */
+function doSearch(){
+  const q=$("#q").value.trim().toLowerCase(), r=$("#res");
+  if(!q){ r.hidden=true; return; }
+  const hits=Object.values(S.nodes).filter(n=>n.id!=="root"&&((n.label||"")+" "+(n.body||"")).toLowerCase().includes(q)).slice(0,50);
+  r.innerHTML=hits.length?hits.map(n=>`<button data-id="${esc(n.id)}">${esc(n.label)}<small>${esc(anc(n.id).slice(0,-1).map(x=>S.nodes[x].label).join(" › ")||"トップ")}</small></button>`).join(""):'<div class="empty">見つかりませんでした</div>';
+  r.hidden=false;
+  r.querySelectorAll("button").forEach(b=>b.onclick=()=>{ if(!leave())return; const n=S.nodes[b.dataset.id]; r.hidden=true; $("#q").value="";
+    go(n.id); });
+}
+$("#q").addEventListener("input",doSearch);
+$("#tryBtn").onclick=simOpen; $("#simClose").onclick=simClose; $("#simbg").onclick=simClose; $("#simReset").onclick=simStart;
+$("#tagF").addEventListener("change",e=>{ if(!leave()){ render(); return; } filter=e.target.value||null; render(); });
+$("#typeF").addEventListener("change",e=>{ if(!leave()){ e.target.value=typeF||""; return; } typeF=e.target.value||null; if(filter==="events") filter=null; render(); });
+document.addEventListener("click",e=>{ if(!e.target.closest(".toplinks")) $("#res").hidden=true; });
+window.addEventListener("beforeunload",e=>{ if(dirty){ e.preventDefault(); e.returnValue=""; } });
+gs("getAll").then(d=>{ apply(d); render(); }).catch(()=>{ $("#side").innerHTML='<div class="loading">データを読み込めませんでした。ページを再読み込みしてください。</div>'; });
+})();

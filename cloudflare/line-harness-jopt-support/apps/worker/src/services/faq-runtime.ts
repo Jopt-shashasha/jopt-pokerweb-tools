@@ -1,5 +1,5 @@
 import type { FaqData } from './faq-data.js';
-import { expandFaq } from './faq-data.js';
+import { expandFaq, faqEvents } from './faq-data.js';
 import { faqLineMessage, faqView, type FaqView } from './faq-render.js';
 import { faqNow, getFaqRelease, selectFaqDeployment } from './faq-store.js';
 
@@ -26,12 +26,13 @@ async function updateStatus(db:D1Database,s:Session,status:'unread'|'resolved',n
 }
 export async function closeFaqSessions(db:D1Database,friendId:string){if(await schemaExists(db))await db.prepare("UPDATE faq_sessions SET outcome='resolved',updated_at=? WHERE friend_id=? AND outcome='handoff'").bind(faqNow(),friendId).run();}
 export async function handleFaq(db:D1Database,input:Input):Promise<boolean>{
-  const start=input.kind==='text'&&['FAQ','FAQテスト'].includes(input.value.trim());
+  // Rich Menu entries are stable and independent of release/session IDs.
+  const start=input.kind==='postback'&&['faqv1:start','faqv1:test','faqv1:start:human','faqv1:test:human'].includes(input.value);
   if(!start&&!(input.kind==='postback'&&input.value.startsWith('faqv1:')))return false;
   if(!input.accountId||!await schemaExists(db))return false;
-  let s:Session|null=null,action='node',target='root';
+  let s:Session|null=null,action='node',target=start&&input.value.endsWith(':human')?'human':'root';
   if(!start){const parts=input.value.split(':');if(parts.length!==5)return true;s=await db.prepare('SELECT * FROM faq_sessions WHERE id=? AND account_id=? AND friend_id=?').bind(parts[2],input.accountId,input.friendId).first<Session>();if(!s)return true;}
-  const deployment=await selectFaqDeployment(db,input.accountId,input.friendId,start?input.value.trim()==='FAQテスト':s!.audience==='test');
+  const deployment=await selectFaqDeployment(db,input.accountId,input.friendId,start?input.value.startsWith('faqv1:test'):s!.audience==='test');
   if(!deployment)return input.kind==='postback'; // Disabled FAQ buttons must never hit unrelated automation.
   const release=await getFaqRelease(db,input.accountId,deployment.release_id);if(!release)return true;
   const data=JSON.parse(release.payload) as FaqData;
@@ -51,7 +52,7 @@ export async function handleFaq(db:D1Database,input:Input):Promise<boolean>{
     }
   }
   if(action==='node'&&!data.nodes[target])return true;
-  if(action==='event'&&(!s||!data.events[target]||data.events[target].active!==true))return true;
+  if(action==='event'&&(!s||!data.nodes[s.node_id]?.per_event||!faqEvents(data,s.node_id).some(e=>e.id===target)))return true;
   // Only authenticated LINE webhook events enter here. Receipts prevent duplicated state transitions/sends.
   const receipt=await db.prepare("INSERT OR IGNORE INTO faq_webhook_receipts(account_id,event_id,state,created_at) VALUES(?,?,'processing',?)").bind(input.accountId,input.eventId,faqNow()).run();
   if(!receipt.meta.changes)return true;
@@ -70,6 +71,7 @@ export async function handleFaq(db:D1Database,input:Input):Promise<boolean>{
       if(action==='event')s.event_id=target;
       const nodeId=action==='node'?target:s.node_id;
       view=faqView(data,nodeId,s.event_id);
+      s.event_id=view.eventId;
       if(action==='handoff'){
         const node=data.nodes[nodeId],fields=(data.handoffs[node.handoff||'H_GENERAL']?.fields||[]).map(f=>'・'+f).join('\n');
         const j=new Date(Date.now()+9*3600000),open=![0,3].includes(j.getUTCDay())&&j.getUTCHours()>=10&&j.getUTCHours()<19;

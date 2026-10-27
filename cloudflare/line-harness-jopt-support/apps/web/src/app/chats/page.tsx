@@ -17,6 +17,7 @@ import { Checkbox } from '@cloudflare/kumo/components/checkbox'
 import { Input } from '@cloudflare/kumo/components/input'
 import { Radio } from '@cloudflare/kumo/components/radio'
 import { Select } from '@cloudflare/kumo/components/select'
+import { faqPostbackLabel } from './faq-postback'
 
 interface Chat {
   id: string
@@ -30,6 +31,7 @@ interface Chat {
   lastMessageContent: string | null
   lastMessageDirection: 'incoming' | 'outgoing' | null
   lastMessageType: string | null
+  lastMessageSource?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -40,6 +42,14 @@ interface ChatMessage {
   messageType: string
   content: string
   createdAt: string
+  source?: string | null
+  senderStaffId?: string | null
+  senderStaffName?: string | null
+}
+
+function senderLabel(msg: ChatMessage): string {
+  return msg.direction === 'outgoing' && msg.source === 'manual'
+    ? `送信者：${msg.senderStaffName || '不明'}` : ''
 }
 
 // リッチメニューのタブ切替 (richmenuswitch) は、webhook が postback data
@@ -151,13 +161,7 @@ interface FriendItem {
   isFollowing: boolean
 }
 
-interface MessageLog {
-  id: string
-  direction: 'incoming' | 'outgoing'
-  messageType: string
-  content: string
-  createdAt: string
-}
+type MessageLog = ChatMessage
 
 function DirectMessagePanel({ friendId, friend, onBack, onSent }: {
   friendId: string
@@ -191,15 +195,19 @@ function DirectMessagePanel({ friendId, friend, onBack, onSent }: {
     sendLockRef.current = true
     setSending(true)
     try {
-      await fetchApi(`/api/friends/${friendId}/messages`, {
+      const result = await fetchApi<{ success: boolean; data: { messageId: string; senderStaffId: string | null; senderStaffName: string | null }; error?: string }>(`/api/friends/${friendId}/messages`, {
         method: 'POST',
         body: JSON.stringify({ content: message, messageType: 'text' }),
       })
+      if (!result.success) throw new Error(result.error || '送信に失敗しました')
       setMessages((prev) => [...prev, {
-        id: crypto.randomUUID(),
+        id: result.data.messageId,
         direction: 'outgoing',
         messageType: 'text',
         content: message,
+        source: 'manual',
+        senderStaffId: result.data.senderStaffId,
+        senderStaffName: result.data.senderStaffName,
         createdAt: new Date().toISOString(),
       }])
       setMessage('')
@@ -263,6 +271,7 @@ function DirectMessagePanel({ friendId, friend, onBack, onSent }: {
                 <div className="max-w-[92%] min-w-0">
                   <FlexPreviewComponent content={msg.content} />
                   <p className="text-xs mt-1 text-gray-400">
+                    {senderLabel(msg) && <span className="mr-2">{senderLabel(msg)}</span>}
                     {new Date(msg.createdAt).toLocaleString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
@@ -274,6 +283,7 @@ function DirectMessagePanel({ friendId, friend, onBack, onSent }: {
                 }`}>
                   <div className="text-sm whitespace-pre-wrap break-words">{renderContent(msg)}</div>
                   <p className={`text-xs mt-1 ${msg.direction === 'outgoing' ? 'text-green-200' : 'text-gray-400'}`}>
+                    {senderLabel(msg) && <span className="mr-2">{senderLabel(msg)}</span>}
                     {new Date(msg.createdAt).toLocaleString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
@@ -546,6 +556,7 @@ export default function ChatsPage() {
   // avoids any update loop.
   useEffect(() => {
     if (!chatDetail) return
+    if (statusFilter !== 'all' && chatDetail.status !== statusFilter) return
     setChats((prev) => {
       if (prev.some((c) => c.id === chatDetail.id)) return prev
       // /api/chats/:id may not populate the lastMessage* fields; derive
@@ -564,12 +575,13 @@ export default function ChatsPage() {
         lastMessageContent: chatDetail.lastMessageContent ?? lastMsg?.content ?? null,
         lastMessageDirection: chatDetail.lastMessageDirection ?? lastMsg?.direction ?? null,
         lastMessageType: chatDetail.lastMessageType ?? lastMsg?.messageType ?? null,
+        lastMessageSource: chatDetail.lastMessageSource ?? lastMsg?.source ?? null,
         createdAt: chatDetail.createdAt,
         updatedAt: chatDetail.updatedAt,
       }
       return [entry, ...prev]
     })
-  }, [chatDetail, chats])
+  }, [chatDetail, chats, statusFilter])
 
   // 詳細が新しくロードされたら最下部（＝最新メッセージ）までスクロールする。
   // そこから上にスクロールすれば過去のメッセージを辿れる（LINE受信画面と同じUX）。
@@ -698,7 +710,7 @@ export default function ChatsPage() {
       // Keep one send event locally, just as the server does for quota accounting.
       setChatDetail(previous => previous?.id === sendingChatId ? {
         ...previous, lastMessageAt: now, status: 'in_progress',
-        messages: [...(previous.messages ?? []), { id: crypto.randomUUID(), direction: 'outgoing', messageType: payload.messageType, content: payload.messageContent, createdAt: now }],
+        messages: [...(previous.messages ?? []), { id: result.data.messageId, direction: 'outgoing', messageType: payload.messageType, content: payload.messageContent, createdAt: now, source: 'manual', senderStaffId: result.data.senderStaffId, senderStaffName: result.data.senderStaffName }],
       } : previous)
       setChats(previous => {
         const updated = previous.map(chat => chat.id === sendingChatId ? {
@@ -825,6 +837,7 @@ export default function ChatsPage() {
                   // 最新メッセージの本文 preview。flex/image は文字列で見せても意味が薄いので type 表記に置換。
                   const previewRaw = chat.lastMessageContent ?? ''
                   const preview = (() => {
+                    if (chat.lastMessageDirection === 'incoming' && chat.lastMessageSource === 'postback' && previewRaw.startsWith('faqv1:')) return 'FAQの選択'
                     if (RICH_MENU_SWITCH_RE.test(previewRaw)) return 'リッチメニュー切替'
                     try { const group = parseMessageGroup(previewRaw); if (group) return `メッセージ ${group.length}件` } catch { /* legacy preview */ }
                     if (chat.lastMessageType === 'image') return '📷 画像'
@@ -1063,7 +1076,7 @@ export default function ChatsPage() {
                     } else if (msg.messageType === 'sticker') {
                       bubbleContent = <StickerMessageImage content={msg.content} />
                     } else {
-                      bubbleContent = <span>{msg.content}</span>
+                      bubbleContent = <span>{faqPostbackLabel(msg, allMsgs.slice(0, idx)) ?? msg.content}</span>
                     }
 
                     return (
@@ -1109,6 +1122,7 @@ export default function ChatsPage() {
                             )}
                             {/* 時刻 */}
                             <span className="text-xs text-white/50 mt-0.5 px-1">
+                              {senderLabel(msg) && <span className="mr-2">{senderLabel(msg)}</span>}
                               {new Date(msg.createdAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>

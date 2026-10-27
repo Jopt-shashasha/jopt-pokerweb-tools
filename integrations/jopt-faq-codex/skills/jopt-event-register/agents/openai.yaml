@@ -1,0 +1,4 @@
+interface:
+  display_name: "大会情報登録"
+  short_description: "2つのポータルを照合し、根拠付きの大会情報をFAQ Appに登録する"
+  default_prompt: "$jopt-event-register で、この大会ポータルと受付ポータルから大会情報を確認し、登録候補を作成してください。"

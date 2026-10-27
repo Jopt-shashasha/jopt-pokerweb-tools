@@ -205,6 +205,8 @@ CREATE TABLE IF NOT EXISTS messages_log (
   delivery_type    TEXT CHECK (delivery_type IN ('push', 'reply', 'test')),
   source           TEXT,
   line_account_id  TEXT,
+  sender_staff_id   TEXT,
+  sender_staff_name TEXT,
   created_at       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%f', 'now', '+9 hours'))
 );
 
@@ -1190,4 +1192,15 @@ CREATE INDEX IF NOT EXISTS idx_faq_sessions_pending ON faq_sessions(account_id,f
 CREATE TABLE IF NOT EXISTS faq_webhook_receipts (
   account_id TEXT NOT NULL, event_id TEXT NOT NULL, state TEXT NOT NULL,
   created_at TEXT NOT NULL, PRIMARY KEY(account_id,event_id)
+);
+
+CREATE TABLE IF NOT EXISTS faq_test_menu_members (
+  account_id TEXT NOT NULL REFERENCES line_accounts(id) ON DELETE CASCADE,
+  friend_id TEXT NOT NULL REFERENCES friends(id) ON DELETE CASCADE,
+  group_id TEXT NOT NULL,
+  rich_menu_id TEXT NOT NULL,
+  previous_menu_id TEXT,
+  added_by TEXT,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY(account_id, friend_id)
 );

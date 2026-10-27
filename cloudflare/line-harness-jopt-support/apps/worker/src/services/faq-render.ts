@@ -1,11 +1,11 @@
-import { expandFaq, faqButtons, type FaqData } from './faq-data.js';
+import { expandFaq, faqButtons, faqEvents, type FaqData } from './faq-data.js';
 export interface FaqView {nodeId:string;eventId:string|null;text:string;buttons:Array<{label:string;nodeId?:string;action?:'resolved'|'handoff'|'event';eventId?:string;url?:string}>;outcome:'browsing'|'answered'|'redirected'|'handoff'}
 export function faqView(d:FaqData,nodeId='root',eventId?:string|null):FaqView {
   const n=d.nodes[nodeId];if(!n)throw new Error('FAQ項目がありません');
   const view:FaqView={nodeId,eventId:eventId||null,text:'',buttons:[],outcome:n.type==='menu'?'browsing':n.type==='redirect'?'redirected':n.type==='handoff'?'handoff':'answered'};
-  if(n.per_event&&!eventId){
+  if(n.per_event&&(!eventId||!faqEvents(d,nodeId).some(e=>e.id===eventId))){
     view.outcome='browsing';view.text=n.label;
-    view.buttons=Object.values(d.events).filter(e=>e.active===true).map(e=>({label:String(e.name||e.id),action:'event' as const,eventId:e.id}));
+    view.eventId=null;view.buttons=faqEvents(d,nodeId).map(e=>({label:String(e.name||e.id),action:'event' as const,eventId:e.id}));
   }else{
     view.text=expandFaq(d,n.body||'',eventId||undefined);
     view.buttons=faqButtons(d,nodeId).map(x=>({label:x.label,nodeId:x.id}));
@@ -26,7 +26,7 @@ export function faqView(d:FaqData,nodeId='root',eventId?:string|null):FaqView {
     if(n.type==='answer'){
       view.text+='\n\n'+String(d.messages.msg_followup?.text||'');
       view.buttons.push({label:String(d.messages.msg_resolved?.title||'解決した'),action:'resolved'});
-      view.buttons.push({label:d.nodes.human?.label||'担当者に相談',action:'handoff'});
+      view.buttons.push({label:'担当者に相談',action:'handoff'});
     }
 
   }

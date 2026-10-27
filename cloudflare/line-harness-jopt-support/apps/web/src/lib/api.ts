@@ -1019,7 +1019,7 @@ export const api = {
         body: JSON.stringify(data),
       }),
     send: (id: string, data: { content: string; messageType?: string }) =>
-      fetchApi<ApiResponse<unknown>>(`/api/chats/${id}/send`, {
+      fetchApi<ApiResponse<{ sent: boolean; messageId: string; senderStaffId: string | null; senderStaffName: string | null }>>(`/api/chats/${id}/send`, {
         method: 'POST',
         body: JSON.stringify(data),
       }),

@@ -1,0 +1,52 @@
+{
+  "richMenuId": "richmenu-a1f14b4e5b583a6b97469be29f09f1d1",
+  "name": "JOPT問い合わせメニュー（個人テスト）",
+  "size": {
+    "width": 2500,
+    "height": 1686
+  },
+  "chatBarText": "メニュー",
+  "selected": true,
+  "areas": [
+    {
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1667,
+        "height": 1686
+      },
+      "action": {
+        "label": "お問い合わせ",
+        "type": "postback",
+        "data": "jopt_inquiry_start_v1",
+        "displayText": "【問い合わせ】"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1667,
+        "y": 0,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "label": "FAQ（日本語）",
+        "type": "uri",
+        "uri": "https://japanopenpoker.com/qa/?openExternalBrowser=1"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1667,
+        "y": 843,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "label": "FAQ（英語）",
+        "type": "uri",
+        "uri": "https://japanopenpoker.com/english-guide/?openExternalBrowser=1"
+      }
+    }
+  ]
+}

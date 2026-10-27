@@ -1,0 +1,52 @@
+{
+  "size": {
+    "width": 2500,
+    "height": 1686
+  },
+  "selected": true,
+  "name": "JOPT Support 大FAQ＋2入口（個人テスト）",
+  "chatBarText": "メニュー",
+  "areas": [
+    {
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "width": 1667,
+        "height": 1686
+      },
+      "action": {
+        "type": "postback",
+        "label": "よくあるご質問",
+        "data": "faqv1:test"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1667,
+        "y": 0,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "postback",
+        "label": "担当者に相談",
+        "data": "support:open-keyboard",
+        "inputOption": "openKeyboard"
+      }
+    },
+    {
+      "bounds": {
+        "x": 1667,
+        "y": 843,
+        "width": 833,
+        "height": 843
+      },
+      "action": {
+        "type": "uri",
+        "label": "English FAQ",
+        "uri": "https://japanopenpoker.com/english-guide/?openExternalBrowser=1"
+      }
+    }
+  ],
+  "richMenuId": "richmenu-5c85fb8f5ac6a8f51474763e20662e5f"
+}

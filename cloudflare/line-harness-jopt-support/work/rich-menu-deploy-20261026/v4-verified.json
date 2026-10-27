@@ -1,0 +1,120 @@
+{
+  "actual": {
+    "richMenuId": "richmenu-19a424c671e8b6b41958ccf406a3a9ed",
+    "name": "JOPT Support 大FAQ＋2入口（個人テスト）",
+    "size": {
+      "width": 2500,
+      "height": 1686
+    },
+    "chatBarText": "メニュー",
+    "selected": true,
+    "areas": [
+      {
+        "bounds": {
+          "x": 0,
+          "y": 0,
+          "width": 1667,
+          "height": 1686
+        },
+        "action": {
+          "label": "よくあるご質問",
+          "type": "postback",
+          "data": "faqv1:test"
+        }
+      },
+      {
+        "bounds": {
+          "x": 1667,
+          "y": 0,
+          "width": 833,
+          "height": 843
+        },
+        "action": {
+          "label": "担当者に相談",
+          "type": "postback",
+          "data": "support:open-keyboard",
+          "inputOption": "openKeyboard"
+        }
+      },
+      {
+        "bounds": {
+          "x": 1667,
+          "y": 843,
+          "width": 833,
+          "height": 843
+        },
+        "action": {
+          "label": "FAQ（英語）",
+          "type": "uri",
+          "uri": "https://japanopenpoker.com/english-guide/?openExternalBrowser=1"
+        }
+      }
+    ]
+  },
+  "assigned": {
+    "id": "richmenu-19a424c671e8b6b41958ccf406a3a9ed",
+    "name": "JOPT Support 大FAQ＋2入口（個人テスト）",
+    "isDefault": false
+  },
+  "group": {
+    "id": "f0541599-c929-4af1-818a-a66754a27154",
+    "accountId": "9ff322c4-32e5-4afc-a361-006361c1f503",
+    "name": "JOPT Support 大FAQ＋2入口（個人テスト）",
+    "chatBarText": "メニュー",
+    "size": "large",
+    "defaultPageId": "3511791c-508a-49e6-98df-80ebf2460f35",
+    "isDefaultForAll": false,
+    "selected": true,
+    "status": "published",
+    "publishingAt": null,
+    "createdAt": "2026-10-26T16:10:13.852+09:00",
+    "updatedAt": "2026-10-26T16:10:15.881+09:00",
+    "pages": [
+      {
+        "id": "3511791c-508a-49e6-98df-80ebf2460f35",
+        "orderIndex": 0,
+        "name": "ページ 1",
+        "aliasId": "lhx-f0541599-0",
+        "lineRichmenuId": "richmenu-19a424c671e8b6b41958ccf406a3a9ed",
+        "imageR2Key": "rich-menus/9ff322c4-32e5-4afc-a361-006361c1f503/f0541599-c929-4af1-818a-a66754a27154/3511791c-508a-49e6-98df-80ebf2460f35/1792998613958.png",
+        "imageContentType": "image/png",
+        "areas": [
+          {
+            "id": "1c124871-c666-4e92-8537-f9c8aa1322d9",
+            "boundsX": 1667,
+            "boundsY": 843,
+            "boundsWidth": 833,
+            "boundsHeight": 843,
+            "actionType": "uri",
+            "actionData": {
+              "uri": "https://japanopenpoker.com/english-guide/?openExternalBrowser=1"
+            }
+          },
+          {
+            "id": "d11e036c-8f4d-4743-8df5-f50b9a1c37f8",
+            "boundsX": 0,
+            "boundsY": 0,
+            "boundsWidth": 1667,
+            "boundsHeight": 1686,
+            "actionType": "postback",
+            "actionData": {
+              "data": "faqv1:test"
+            }
+          },
+          {
+            "id": "eb1dc337-92ca-4e6a-86f5-9cca4e3f96bf",
+            "boundsX": 1667,
+            "boundsY": 0,
+            "boundsWidth": 833,
+            "boundsHeight": 843,
+            "actionType": "postback",
+            "actionData": {
+              "data": "support:open-keyboard",
+              "inputOption": "openKeyboard"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

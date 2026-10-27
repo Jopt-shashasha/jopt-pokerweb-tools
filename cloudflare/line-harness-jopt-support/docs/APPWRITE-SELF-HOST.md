@@ -4,10 +4,10 @@ This installation is based on upstream v0.24.2 with a local Appwrite storage ada
 
 ## Services and ownership
 
-- Cloudflare account: `xhpc007@gmail.com`, account ID `4d9c9e5363f3e4e66214398c88afd9f4`. Existing Workers Free account; this install did not activate R2 or upgrade Workers.
+- Cloudflare account: `xiao.h@japanopenpoker.com`, account ID `9b50e8cea0fe5553c90404e7757fe679`. Migrated on 2026-10-26 JST; Workers Free, no R2 or paid upgrade.
 - Worker: `line-harness-jopt-support`.
-- D1: `line-harness-jopt-support`, ID `e66caeb0-aa14-4f4a-80f0-b18bf87229e9`.
-- Admin: https://line-harness-jopt-support.japanopenpoker.workers.dev/console/
+- D1: `line-harness-jopt-support`, ID `9048047a-7ec0-47f8-bb43-8326e70e44f5`.
+- Admin: https://line-harness-jopt-support.xiao-h-9b5.workers.dev/console/
 - Appwrite email/password account: `xiao.h@japanopenpoker.com`; company email verified. No Google SSO used.
 - Appwrite Free project: `JOPT LINE Harness`, ID `6ad33813000dd5ab3dca`, region `fra`.
 - Private bucket: `line-harness-files`, ID `6ad338b3002987cffde2`.
@@ -37,7 +37,9 @@ The built-in `builtin-mileage-wallet-keyword` auto-reply (keyword `マイル`) w
 
 The non-secret before/after record is saved at `C:\Users\41512\Documents\Codex\2026-10-17\ok\outputs\LINE-Harness-入口切换记录.json`. Keep the previous URL in the record for rollback. The previously observed temporary trycloudflare URL came from a stale browser page and was not the live endpoint at cutover.
 
-New tested endpoint: https://line-harness-jopt-support.japanopenpoker.workers.dev/webhook
+Current tested endpoint (2026-10-26 migration): https://line-harness-jopt-support.xiao-h-9b5.workers.dev/webhook
+
+The former `japanopenpoker.workers.dev` Worker now only forwards compatibility traffic to the new Worker. Its cron triggers are disabled and its scheduler alarm handler stops the old alarm. The old D1 is retained for rollback. A full data comparison covered 95 tables; all 243 message rows and 110 friends were preserved. LINE webhook readback showed `active: true` and its official test returned HTTP 200. Appwrite project, bucket, API keys and LINE account/menu IDs are unchanged. Migration backups contain secrets/customer data and are excluded from Git under `work/cloudflare-migration-20261026/` with restricted filesystem ACLs.
 
 No customer message or broadcast was sent. Existing follower/history import was not run. LINE Login and LIFF IDs are not configured, so customer-facing LIFF forms/login are not ready. Do not distribute the dashboard's generated friend-add link as a verified working LIFF flow.
 
@@ -49,7 +51,7 @@ Run from the source repository root. Node 20+ and pnpm 9.15.4 are expected. Use 
 npx.cmd --yes pnpm@9.15.4 --filter @line-crm/shared --filter @line-crm/line-sdk --filter @line-harness/update-engine build
 $env:NEXT_BASE_PATH='/console'
 $env:NEXT_PUBLIC_API_MODE='same-origin'
-$env:NEXT_PUBLIC_API_URL='https://line-harness-jopt-support.japanopenpoker.workers.dev'
+$env:NEXT_PUBLIC_API_URL='https://line-harness-jopt-support.xiao-h-9b5.workers.dev'
 $env:NEXT_TELEMETRY_DISABLED='1'
 npx.cmd --yes pnpm@9.15.4 --filter web build
 if ($LASTEXITCODE -ne 0) { throw 'Admin build failed' }

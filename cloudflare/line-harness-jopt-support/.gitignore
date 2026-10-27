@@ -29,3 +29,6 @@ apps/worker/dist/
 
 # Claude Code local dev-server config (machine-local paths)
 .claude/launch.json
+
+# Private migration backups include credentials and customer messages.
+work/cloudflare-migration-20261026/

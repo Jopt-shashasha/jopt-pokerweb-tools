@@ -375,6 +375,8 @@ async function handleEvent(
   // Postback events — triggered by Flex buttons with action.type: "postback"
   // Uses the same auto_replies matching but without displaying text in chat
   if (event.type === 'postback') {
+    // LINE opens the keyboard locally; never reply or run automations for this tap.
+    if ((event as unknown as { postback: { data: string } }).postback.data === 'support:open-keyboard') return;
     const userId = event.source.type === 'user' ? event.source.userId : undefined;
     if (!userId) return;
 
@@ -553,102 +555,10 @@ async function handleEvent(
       occurredAt: now,
     });
 
-    if (await handleFaq(db, {
-      accountId: lineAccountId ?? null, friendId: friend.id, kind: 'text', value: incomingText,
-      eventId: (event as unknown as { webhookEventId?: string }).webhookEventId || `message:${event.replyToken}`,
-      send: (message) => workerUrl
-        ? replyViaHarnessProxy(workerUrl, lineAccessToken, event.replyToken, [message as Message], proxyDispatch)
-        : lineClient.replyMessage(event.replyToken, [message as Message]),
-    })) return;
-
-    // Cross-account trigger: send message from another account via UUID
-    if (incomingText === '体験を完了する' && lineAccountId) {
-      try {
-        const friendRecord = await db.prepare('SELECT user_id FROM friends WHERE id = ?').bind(friend.id).first<{ user_id: string | null }>();
-        if (friendRecord?.user_id) {
-          // Find the same user on other accounts
-          const otherFriends = await db.prepare(
-            'SELECT f.line_user_id, la.channel_access_token FROM friends f INNER JOIN line_accounts la ON la.id = f.line_account_id WHERE f.user_id = ? AND f.line_account_id != ? AND f.is_following = 1'
-          ).bind(friendRecord.user_id, lineAccountId).all<{ line_user_id: string; channel_access_token: string }>();
-
-          for (const other of otherFriends.results) {
-            const otherClient = new LineClient(other.channel_access_token);
-            await otherClient.pushMessage(other.line_user_id, [buildMessage('flex', JSON.stringify({
-              type: 'bubble', size: 'giga',
-              header: { type: 'box', layout: 'vertical', paddingAll: '20px', backgroundColor: '#fffbeb',
-                contents: [{ type: 'text', text: `${friend.display_name || ''}さんへ`, size: 'lg', weight: 'bold', color: '#1e293b' }],
-              },
-              body: { type: 'box', layout: 'vertical', paddingAll: '20px',
-                contents: [
-                  { type: 'text', text: '別アカウントからのアクションを検知しました。', size: 'sm', color: '#06C755', weight: 'bold', wrap: true },
-                  { type: 'text', text: 'アカウント連携が正常に動作しています。体験ありがとうございました。', size: 'sm', color: '#1e293b', wrap: true, margin: 'md' },
-                  { type: 'separator', margin: 'lg' },
-                  { type: 'text', text: 'ステップ配信・フォーム即返信・アカウント連携・リッチメニュー・自動返信 — 全て無料、全てOSS。', size: 'xs', color: '#64748b', wrap: true, margin: 'lg' },
-                ],
-              },
-              footer: { type: 'box', layout: 'vertical', paddingAll: '16px',
-                contents: [
-                  { type: 'button', action: { type: 'message', label: '導入について相談する', text: '導入支援を希望します' }, style: 'primary', color: '#06C755' },
-                  ...(liffUrl ? [{ type: 'button', action: { type: 'uri', label: 'フィードバックを送る', uri: `${liffUrl}?page=form` }, style: 'secondary', margin: 'sm' }] : []),
-                ],
-              },
-            }))]);
-          }
-
-          // Reply on Account ② confirming
-          await lineClient.replyMessage(event.replyToken, [buildMessage('flex', JSON.stringify({
-            type: 'bubble',
-            body: { type: 'box', layout: 'vertical', paddingAll: '20px',
-              contents: [
-                { type: 'text', text: 'Account ① にメッセージを送りました', size: 'sm', color: '#06C755', weight: 'bold', align: 'center' },
-                { type: 'text', text: 'Account ① のトーク画面を確認してください', size: 'xs', color: '#64748b', align: 'center', margin: 'md' },
-              ],
-            },
-          }))]);
-          return;
-        }
-      } catch (err) {
-        console.error('Cross-account trigger error:', err);
-      }
-    }
-
-    // 自動返信チェック（このアカウントのルール + グローバルルールのみ）。
-    // silent タイプは返信しないが matched=true になり unread / push を抑止する。
-    const { matched, replyTokenConsumed } = await matchAndReply(
-      db,
-      lineClient,
-      friend,
-      incomingText,
-      event.replyToken,
-      {
-        inputKind: 'text',
-        lineAccountId,
-        workerUrl,
-        liffUrl,
-        replyMessage: workerUrl
-          ? (token, messages) => replyViaHarnessProxy(
-              workerUrl,
-              lineAccessToken,
-              token,
-              messages,
-              proxyDispatch,
-            )
-          : undefined,
-      },
-    );
-
-    // auto_replies にマッチしなかった = 自発メッセージ → unread にする
-    if (!matched) {
-      await upsertChatOnMessage(db, friend.id);
-    }
-
-    // イベントバス発火: message_received
-    // Pass replyToken only when auto_reply didn't actually consume it
-    await fireEvent(db, 'message_received', {
-      friendId: friend.id,
-      eventData: { text: incomingText, matched },
-      replyToken: replyTokenConsumed ? undefined : event.replyToken,
-    }, lineAccessToken, lineAccountId);
+    // JOPT Support: free text belongs to the human inbox. Persist it above,
+    // then stop before keyword replies, cross-account pushes or event automation.
+    // FAQ is entered only through postback; never send a menu in response to text.
+    await upsertChatOnMessage(db, friend.id);
 
     return;
   }

@@ -23,15 +23,17 @@ Requests are limited to 2 MiB; each record group to 1,500 entries. A repeated im
 1. Choose the intended LINE account.
 2. Select the JSON file or paste the entire JSON into **FAQ管理 → JSONを取り込む**.
 3. Click **チェック**, then **下書きとして取り込む**. Inspect the returned warnings and preview.
-4. Choose **「FAQテスト」と送信した人は誰でもテスト可能にする** for keyword-only public testing. Alternatively, turn it off and search/select up to 30 Harness friends. These are Harness record IDs, not LINE search/login IDs or email addresses.
-5. Click **このバージョンでテスト開始**. Send the exact text `FAQテスト` from LINE. No unsolicited messages are pushed to the audience. Ordinary messages and existing rich menus remain unchanged.
+4. Choose **テスト用postbackを押した人は誰でもテスト可能にする** or turn it off for a private test (up to 30 Harness friends, including registered test-menu members).
+5. Click **このバージョンでテスト開始**, then use **テストメンバー** to search colleagues by LINE display name, select them, and click **選択した同僚を追加**. Each colleague must be a following friend of this LINE account. If absent from search, ask them to send a message once. Only menus with `faqv1:test` postback and no production FAQ entry are selectable. Changes apply to individual menus, never the account-wide default. Click the menu in LINE to start; sending text does not start FAQ or receive a bot reply.
 6. Use **テスト停止** to stop test conversations. Test buttons are no longer processed after the test deployment is stopped.
-7. Production activation is a separate operation, requires administrator/owner privileges and explicit confirmation, and is blocked by unresolved warnings. The production text entry is `FAQ`; adding a production rich-menu button is a separate deliberate configuration change.
+7. Production activation is separate, requires administrator/owner privileges and explicit confirmation, and is blocked by unresolved warnings. The production entry is postback `faqv1:start`; configuring a production rich-menu button is a separate deliberate change.
+
+Authenticated staff can add/remove test-menu members; starting or publishing a release still requires an administrator. **登録を解除** restores the previous individual menu, or falls back to the official account default if that menu is absent/deleted. If another operator changed the individual menu elsewhere, removal preserves that newer choice. Removal does not delete old FAQ messages; in an open test those old postbacks remain usable until the test deployment is stopped. LINE lookup errors are displayed as unknown, not as proof the menu is absent. Partial batch failures are reported per colleague.
 
 ## Runtime and chat states
 
 - Menu buttons carry version and consultation identifiers in LINE Postbacks; dispatch runs within the existing verified webhook before generic auto-replies/automations. Draft previews send no messages and mutate no chats.
-- `answer` and `check` display the supplied answer/check instructions and offer confirmation. Explicit resolution records a resolved consultation. A direct `handoff`, or the consultation button, sets the chat to unread (keeps an already assigned/in-progress chat in progress) and adds the FAQ/classification to notes.
+- `answer` offers resolution and **担当者に相談**. `check` and direct `handoff` display the supplied instructions/confirmation fields without resolution buttons and create pending human work. The consultation button also sets the chat to unread (keeps an assigned/in-progress chat in progress) and adds FAQ/classification to notes.
 - A channel URI is recorded as redirected, not as proof that another LINE resolved the issue.
 - Handoff acknowledgements/fields use the imported messages. Business hours follow the user-confirmed Tokyo rule: 10:00–19:00, excluding Wednesdays and Sundays.
 - Additional text/images continue through the normal Harness inbox. The bot is not globally paused: users can explicitly browse menus again.
@@ -41,9 +43,9 @@ Requests are limited to 2 MiB; each record group to 1,500 entries. A repeated im
 
 ## Installation / deployment boundary
 
-Before deploying code, apply `packages/db/migrations/073_faq_releases.sql` to the **verified intended database**. New-install `schema.sql` and generated bootstrap include the same tables. Then build/deploy both Worker and admin assets with the deployment's real API topology/base path. Do not deploy a QA frontend built against `127.0.0.1:8792`.
+Before deploying code, apply `packages/db/migrations/073_faq_releases.sql` and `075_faq_test_menu_members.sql` to the **verified intended database**. New-install `schema.sql` and bootstrap include the same tables. Then build/deploy both Worker and admin assets with the deployment's real API topology/base path. Do not deploy a QA frontend built against `127.0.0.1:8792`.
 
-This checkout also contains pre-existing unrelated changes to storage/Appwrite and other files. Do not publish all local changes indiscriminately; prepare a reviewed FAQ-only deployment. Never package `.dev.vars` or local SQLite files as production artifacts. No source commits, pushes, production database migrations or remote activation were performed in this development run.
+This checkout includes the active JOPT storage/Appwrite adapter and other custom functions. Preserve those source changes and use the configured JOPT deployment target. Never package `.dev.vars` or local SQLite files in public assets.
 
 ## Verification and local host
 

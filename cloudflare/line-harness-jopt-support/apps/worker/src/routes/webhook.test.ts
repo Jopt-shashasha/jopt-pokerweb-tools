@@ -192,6 +192,27 @@ describe('POST /webhook — DoS defenses (#104)', () => {
 });
 
 describe('POST /webhook — postback events', () => {
+  test('keyboard-only tap does not reply, run automations, or create a customer message', async () => {
+    vi.mocked(verifySignature).mockResolvedValue(true);
+    const db = { prepare: vi.fn() } as unknown as D1Database;
+    const executionCtx = { waitUntil: vi.fn(), passThroughOnException: vi.fn(), props: {} } as unknown as ExecutionContext;
+    const res = await setupApp().request('/webhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Line-Signature': 'A'.repeat(43) + '=' },
+      body: JSON.stringify({ destination: 'bot', events: [{
+        type: 'postback', replyToken: 'keyboard-reply-token',
+        postback: { data: 'support:open-keyboard' }, timestamp: Date.now(),
+        source: { type: 'user', userId: 'U-existing' }, webhookEventId: 'event-keyboard',
+        deliveryContext: { isRedelivery: false }, mode: 'active',
+      }] }),
+    }, { ...baseEnv, DB: db }, executionCtx);
+    expect(res.status).toBe(200);
+    await vi.mocked(executionCtx.waitUntil).mock.calls[0]?.[0];
+    expect(db.prepare).not.toHaveBeenCalled();
+    expect(lineClientMocks.replyMessage).not.toHaveBeenCalled();
+    expect(fireEvent).not.toHaveBeenCalled();
+  });
+
   test('fires postback_received with postback.data so IF-THEN automations run on rich menu taps', async () => {
     vi.mocked(verifySignature).mockResolvedValue(true);
     vi.mocked(jstNow).mockReturnValue('2026-07-19T12:00:00.000+09:00');
@@ -460,13 +481,7 @@ describe('POST /webhook — first-contact existing friends', () => {
       statusMessage: 'hello',
     });
     expect(upsertChatOnMessage).toHaveBeenCalledWith(db, 'friend-1');
-    expect(fireEvent).toHaveBeenCalledWith(
-      db,
-      'message_received',
-      expect.objectContaining({ friendId: 'friend-1' }),
-      'env-default-token',
-      null,
-    );
+    expect(fireEvent).not.toHaveBeenCalled();
     expect(getScenarios).not.toHaveBeenCalled();
     expect(enrollFriendInScenario).not.toHaveBeenCalled();
 

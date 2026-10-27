@@ -5,6 +5,7 @@ import { Hono } from 'hono';
 import { LineClient, type Message } from '@line-crm/line-sdk';
 import { sqliteD1 } from '../test-support/sqlite-d1.js';
 import { chats } from './chats.js';
+import { friends } from './friends.js';
 
 const schema = readFileSync(new URL('../../../../packages/db/bootstrap.sql', import.meta.url), 'utf8');
 const RAW_URL = 'https://example.test/join';
@@ -12,7 +13,8 @@ const WORKER = 'https://request-worker.example';
 
 describe('chat reply tracking and delivery logs', () => {
   let fixture: ReturnType<typeof sqliteD1>;
-  let app: Hono;
+  let app: Hono<{ Variables: { staff: { id: string; name: string; role: 'owner' | 'admin' | 'staff' } } }>;
+  let sender: { id: string; name: string; role: 'owner' | 'admin' | 'staff' };
   let requests: Array<{ token: string; to: string; messages: Message[] }>;
   let failDelivery: boolean;
   beforeEach(() => {
@@ -36,8 +38,11 @@ describe('chat reply tracking and delivery logs', () => {
       if (failDelivery) throw new Error('Synthetic delivery failure');
       return { data: {}, headers: new Headers() };
     });
+    sender = { id: 'staff-a', name: '担当者A', role: 'staff' };
     app = new Hono();
+    app.use('*', async (c, next) => { c.set('staff', sender); await next(); });
     app.route('/', chats);
+    app.route('/', friends);
   });
   afterEach(() => {
     expect(fetch).not.toHaveBeenCalled();
@@ -45,7 +50,7 @@ describe('chat reply tracking and delivery logs', () => {
     vi.restoreAllMocks();
   });
 
-  function send(body: { content: string; messageType?: string; trackLinks?: boolean }, id = 'chat-a', workerUrl?: string) {
+  function send(body: { content: string; messageType?: string; trackLinks?: boolean } & Record<string, unknown>, id = 'chat-a', workerUrl?: string) {
     return app.request(`${WORKER}/api/chats/${id}/send`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://untrusted-admin.example' }, body: JSON.stringify(body),
     }, { DB: fixture.db, LINE_CHANNEL_ACCESS_TOKEN: 'synthetic-unrelated-default', ...(workerUrl === undefined ? {} : { WORKER_URL: workerUrl }) });
@@ -65,6 +70,61 @@ describe('chat reply tracking and delivery logs', () => {
     expect(fixture.sqlite.prepare('SELECT message_type,content,source,line_account_id FROM messages_log WHERE friend_id=?').get(friend))
       .toEqual({ message_type: message.type, content, source: 'manual', line_account_id: account });
   }
+
+  it('hides FAQ clicks and automatic replies from chat detail and preview without deleting messages', async () => {
+    const insert=fixture.sqlite.prepare('INSERT INTO messages_log(id,friend_id,direction,message_type,content,source,created_at) VALUES(?,?,?,?,?,?,?)');
+    insert.run('text','friend-a','incoming','text','質問です','line','2026-10-27T10:00:00+09:00');
+    insert.run('image','friend-a','incoming','image','画像','line','2026-10-27T10:01:00+09:00');
+    insert.run('human','friend-a','outgoing','text','担当者の返信','manual','2026-10-27T10:02:00+09:00');
+    insert.run('click','friend-a','incoming','text','faqv1:test','postback','2026-10-27T10:03:00+09:00');
+    insert.run('bot','friend-a','outgoing','text','自動回答','auto_reply','2026-10-27T10:04:00+09:00');
+    const detail=await (await app.request(`${WORKER}/api/chats/chat-a`,{}, {DB:fixture.db})).json() as {data:{messages:Array<{id:string}>}};
+    expect(detail.data.messages.map(x=>x.id)).toEqual(['text','image','human']);
+    const list=await (await app.request(`${WORKER}/api/chats`,{}, {DB:fixture.db})).json() as {data:Array<{friendId:string;lastMessageContent:string}>};
+    expect(list.data.find(x=>x.friendId==='friend-a')?.lastMessageContent).toBe('担当者の返信');
+    expect(fixture.sqlite.prepare('SELECT COUNT(*) AS n FROM messages_log WHERE friend_id=?').get('friend-a')).toEqual({n:5});
+  });
+
+  it('records the authenticated employee per send, ignoring caller-supplied sender and chat assignment', async () => {
+    fixture.sqlite.exec("INSERT INTO operators(id,name,email) VALUES('operator-other','別の担当者','other@example.test'); UPDATE chats SET operator_id='operator-other' WHERE id='chat-a'");
+    const first = await send({ content: '返信A', senderStaffId: 'forged-id', senderStaffName: '偽の名前' });
+    expect((await first.json() as { data: unknown }).data).toMatchObject({ senderStaffId: 'staff-a', senderStaffName: '担当者A' });
+    sender = { id: 'staff-b', name: '担当者B', role: 'admin' };
+    expect((await send({ content: '返信B' })).status).toBe(200);
+    sender.name = '変更後の名前';
+    expect(fixture.sqlite.prepare('SELECT sender_staff_id,sender_staff_name FROM messages_log ORDER BY rowid').all()).toEqual([
+      { sender_staff_id: 'staff-a', sender_staff_name: '担当者A' },
+      { sender_staff_id: 'staff-b', sender_staff_name: '担当者B' },
+    ]);
+    expect(requests.map(r => r.messages)).toEqual([[{ type: 'text', text: '返信A' }], [{ type: 'text', text: '返信B' }]]);
+    const detail = await app.request(`${WORKER}/api/chats/chat-a`, {}, { DB: fixture.db });
+    expect((await detail.json() as { data: { messages: Array<{ senderStaffName: string }> } }).data.messages.map(m => m.senderStaffName)).toEqual(['担当者A', '担当者B']);
+  });
+
+  it('labels a shared owner key accurately without inventing an individual sender', async () => {
+    sender = { id: 'env-owner', name: 'Owner', role: 'owner' };
+    expect((await send({ content: 'owner reply' })).status).toBe(200);
+    expect(fixture.sqlite.prepare('SELECT sender_staff_id,sender_staff_name FROM messages_log').get()).toEqual({
+      sender_staff_id: 'env-owner', sender_staff_name: '共通オーナーキー',
+    });
+  });
+
+  it('records direct friend sends and leaves legacy senders unknown in both history APIs', async () => {
+    fixture.sqlite.prepare("INSERT INTO messages_log(id,friend_id,direction,message_type,content,source,created_at) VALUES('legacy','friend-a','outgoing','text','old reply','manual','2026-01-01T00:00:00+09:00')").run();
+    const sent = await app.request(`${WORKER}/api/friends/friend-a/messages`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: 'direct reply', senderStaffName: 'forged' }),
+    }, { DB: fixture.db, LINE_CHANNEL_ACCESS_TOKEN: 'fallback', WORKER_URL: WORKER });
+    expect(sent.status).toBe(200);
+    expect((await sent.json() as { data: unknown }).data).toMatchObject({ senderStaffId: 'staff-a', senderStaffName: '担当者A' });
+    for (const path of ['/api/chats/chat-a', '/api/friends/friend-a/messages']) {
+      const res = await app.request(`${WORKER}${path}`, {}, { DB: fixture.db });
+      const result = await res.json() as { data: Array<Record<string, unknown>> | { messages: Array<Record<string, unknown>> } };
+      const history = Array.isArray(result.data) ? result.data : result.data.messages;
+      expect(history).toHaveLength(2);
+      expect(history[0]).toMatchObject({ source: 'manual', senderStaffId: null, senderStaffName: null });
+      expect(history[1]).toMatchObject({ source: 'manual', senderStaffId: 'staff-a', senderStaffName: '担当者A' });
+    }
+  });
 
   it('uses each recipient account for both its current token and owned tracked link, with distinct friend attribution', async () => {
     fixture.sqlite.exec("UPDATE line_accounts SET channel_access_token='synthetic-rotated-b' WHERE id='account-b'");

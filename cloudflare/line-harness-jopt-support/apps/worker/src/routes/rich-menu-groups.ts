@@ -323,6 +323,8 @@ richMenuGroups.post('/api/rich-menu-groups/import', async (c) => {
       text?: string;
       data?: string;
       displayText?: string;
+      inputOption?: string;
+      fillInText?: string;
       richMenuAliasId?: string;
     };
   };
@@ -376,6 +378,8 @@ richMenuGroups.post('/api/rich-menu-groups/import', async (c) => {
         actionData: {
           data: a.action.data,
           ...(a.action.displayText ? { displayText: a.action.displayText } : {}),
+          ...(a.action.inputOption ? { inputOption: a.action.inputOption } : {}),
+          ...(a.action.fillInText ? { fillInText: a.action.fillInText } : {}),
         },
       });
     } else if (a.action.type === 'richmenuswitch') {

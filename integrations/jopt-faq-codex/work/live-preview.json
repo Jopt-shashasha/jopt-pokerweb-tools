@@ -1,0 +1,59 @@
+{
+  "schema_version": "jopt.event-import.v1",
+  "operation": "update",
+  "event_id": "ev_mvm0pyh3",
+  "portals": {
+    "portal_url": "https://docs.google.com/spreadsheets/d/1twHzJzZ4KMhFgU8oeSzdE8TzggEYpOv-zPfTz6L_Mc0/edit?gid=1200913462",
+    "reception_portal_url": "https://docs.google.com/spreadsheets/d/1vCqy8lkFWsFvOvUMpokeW-UB8Hlbc5enBUysUSWXnNQ/edit?gid=350922643"
+  },
+  "fields": {
+    "name": "JOPT 2026 Tokyo #03",
+    "brand": "JOPT",
+    "dates": "2026年10月8日（木）〜10月12日（月・祝）",
+    "venue": "ベルサール高田馬場",
+    "guide_url": "https://events.japanopenpoker.com/2026-tokyo-03"
+  },
+  "evidence": {
+    "name": [
+      {
+        "url": "user",
+        "location": "利用者指定の大会名",
+        "quote": "JOPT 2026 Tokyo #03"
+      }
+    ],
+    "brand": [
+      {
+        "url": "user",
+        "location": "利用者指定の大会名",
+        "quote": "JOPT"
+      }
+    ],
+    "dates": [
+      {
+        "url": "https://events.japanopenpoker.com/2026-tokyo-03",
+        "location": "Players Guide 日付選択",
+        "quote": "10月8日(木)〜10月12日(月)"
+      }
+    ],
+    "venue": [
+      {
+        "url": "https://docs.google.com/spreadsheets/d/1twHzJzZ4KMhFgU8oeSzdE8TzggEYpOv-zPfTz6L_Mc0/edit?gid=1200913462",
+        "location": "Menu!C10",
+        "quote": "ベルサール高田馬場"
+      }
+    ],
+    "guide_url": [
+      {
+        "url": "https://events.japanopenpoker.com/2026-tokyo-03",
+        "location": "公開ページタイトル",
+        "quote": "JOPT 2026 Tokyo #03"
+      }
+    ]
+  },
+  "unresolved": [
+    {
+      "field": "age_note",
+      "reason": "本大会の追加制限は未確認。共通の年齢制限を使用。"
+    }
+  ]
+}

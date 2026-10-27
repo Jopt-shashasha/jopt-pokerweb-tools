@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2500" height="1686" viewBox="0 0 2500 1686">
+<title>よくあるご質問 / 担当者に相談 / English FAQ</title>
+<rect width="2500" height="1686" fill="#075995"/>
+<g fill="#003D79"><rect x="58" y="66" width="1583" height="1580" rx="84"/><rect x="1691" y="66" width="775" height="753" rx="72"/><rect x="1691" y="893" width="775" height="753" rx="72"/></g>
+<g fill="#FFFFFF" stroke="#91B3EE" stroke-width="12"><rect x="40" y="40" width="1583" height="1580" rx="84"/><rect x="1673" y="40" width="775" height="753" rx="72"/><rect x="1673" y="867" width="775" height="753" rx="72"/></g>
+<g fill="none" stroke="#DCE8FA" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+<path d="M490 264h590q64 0 64 64v485q0 64-64 64H795l-179 139V877H490q-64 0-64-64V328q0-64 64-64z"/>
+<path d="M705 463q0-112 107-112t107 100q0 64-69 107-38 24-38 75"/><circle cx="812" cy="717" r="7" fill="#DCE8FA"/>
+<path d="M1915 334v-38a145 145 0 0 1 290 0v38"/><rect x="1890" y="308" width="59" height="136" rx="24"/><rect x="2171" y="308" width="59" height="136" rx="24"/><path d="M2200 444v29q0 43-43 43h-56"/><rect x="2045" y="496" width="63" height="36" rx="18"/>
+<circle cx="2060" cy="1145" r="169"/><ellipse cx="2060" cy="1145" rx="80" ry="169"/><path d="M1891 1145h338m-305-91h273m-273 182h273"/>
+</g>
+<g fill="#075995" font-family="Meiryo" font-weight="700" text-anchor="middle">
+<text x="831" y="1190" font-size="170">よくある</text><text x="831" y="1397" font-size="170">ご質問</text>
+<text x="2060" y="620" font-size="100">担当者に相談</text>
+<text x="2060" y="1430" font-size="110" font-family="Arial">English</text><text x="2060" y="1553" font-size="115" font-family="Arial">FAQ</text>
+</g></svg>
