@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>業務ポータル</title>
+<style>
+:root{
+  --bg:#ffffff;
+  --sidebar:#fafafa;
+  --border:#e8e8e8;
+  --ink:#18181b;
+  --ink-soft:#6b6b70;
+  --ink-faint:#a0a0a5;
+  --accent:#18181b;
+  --accent-contrast:#ffffff;
+  --highlight:#2f6f5e;
+  --highlight-soft:#eaf2ef;
+  --warn:#b4762c;
+  --row-hover:#f7f7f7;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Sans","Yu Gothic UI",system-ui,sans-serif;font-size:13.5px;line-height:1.6;}
+button{font-family:inherit;cursor:pointer;}
+
+.prototype-flag{background:#fff7e6;color:#8a5a00;font-size:11.5px;padding:5px 16px;text-align:center;border-bottom:1px solid #f0e0b8;}
+
+.shell{display:flex;min-height:100vh;}
+
+.sidebar{width:228px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:12px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;padding:6px 8px 14px;}
+.brand-mark{width:22px;height:22px;border-radius:6px;background:var(--accent);color:var(--accent-contrast);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
+
+.sidebar-btn{display:flex;align-items:center;gap:8px;width:100%;border:1px solid var(--border);background:var(--bg);border-radius:7px;padding:7px 10px;font-size:13px;font-weight:600;margin-bottom:8px;}
+.sidebar-btn:hover{background:var(--row-hover);}
+.sidebar-btn-accent{background:var(--ink);color:#fff;border-color:var(--ink);}
+.sidebar-btn-accent:hover{opacity:.9;background:var(--ink);}
+.sidebar-btns{margin-bottom:10px;}
+
+.nav-group{margin-bottom:10px;}
+.nav-link{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:none;background:none;border-radius:6px;padding:7px 8px;font-size:13px;color:var(--ink-soft);text-align:left;}
+.nav-link:hover{background:var(--row-hover);color:var(--ink);}
+.nav-link.active{background:var(--ink);color:#fff;}
+.nav-link .count{font-size:11px;color:inherit;opacity:.6;}
+.nav-parent .chev{transition:transform .15s;color:var(--ink-faint);}
+.chev.open{transform:rotate(90deg);}
+.nav-sub{padding-left:20px;font-size:12.5px;}
+
+.sidebar-foot{margin-top:auto;border-top:1px solid var(--border);padding-top:10px;display:flex;align-items:center;gap:8px;padding-left:8px;}
+.avatar{width:24px;height:24px;border-radius:50%;background:var(--bg);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;border:1px solid var(--border);flex-shrink:0;}
+.sidebar-foot .who{font-size:12.5px;font-weight:600;}
+.sidebar-foot .mail{font-size:11px;color:var(--ink-faint);}
+
+.main{flex:1;min-width:0;}
+.topbar{display:flex;align-items:center;gap:14px;padding:14px 28px;border-bottom:1px solid var(--border);}
+#menuBtn{display:none;border:1px solid var(--border);background:var(--bg);border-radius:7px;padding:4px 9px;font-size:15px;}
+.crumbs{display:flex;align-items:center;gap:8px;font-size:13px;min-width:0;flex-wrap:wrap;}
+.crumb{border:none;background:none;color:var(--ink-faint);padding:0;font-size:13px;}
+.crumb:hover{color:var(--ink);text-decoration:underline;}
+.crumb-cur{font-weight:600;color:var(--ink);}
+.crumb-sep{color:var(--ink-faint);}
+.topbar .search{margin-left:auto;position:relative;width:240px;flex-shrink:0;}
+.topbar .search input{width:100%;padding:6px 10px 6px 26px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--sidebar);}
+.topbar .search .ic{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--ink-faint);font-size:12px;}
+
+.content{padding:22px 28px 60px;max-width:1000px;}
+
+.btn{border:1px solid var(--border);background:var(--bg);border-radius:7px;padding:7px 12px;font-size:13px;color:var(--ink);}
+.btn:hover{background:var(--row-hover);}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn.primary:hover{opacity:.88;background:var(--accent);}
+.btn:disabled{opacity:.55;cursor:default;}
+
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+.stat-card{border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+.stat-card .label{font-size:11.5px;color:var(--ink-soft);margin-bottom:8px;}
+.stat-card .value{font-size:22px;font-weight:700;}
+
+.tag-line{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--ink-faint);margin-bottom:22px;}
+h2.section-title{font-size:13.5px;margin:0 0 12px;color:var(--ink-soft);font-weight:600;}
+h2.section-title .faint{font-weight:400;color:var(--ink-faint);font-size:11.5px;margin-left:6px;}
+
+.home-row{display:grid;grid-template-columns:1.6fr 1fr;gap:28px;align-items:start;}
+.pick-list{display:flex;flex-direction:column;gap:10px;margin-bottom:30px;}
+.pick-item{border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;display:flex;flex-direction:column;}
+.pick-item:hover{border-color:var(--ink);}
+.pick-item .dept-tag{display:inline-block;align-self:flex-start;font-size:10.5px;letter-spacing:.03em;color:var(--highlight);background:var(--highlight-soft);font-weight:700;padding:3px 9px;border-radius:999px;margin-bottom:10px;}
+.pick-item .benefit{font-size:13.5px;font-weight:600;line-height:1.55;margin-bottom:12px;flex:1;}
+.pick-item .source-title{font-size:12px;color:var(--ink-faint);padding-top:10px;border-top:1px solid var(--border);}
+.pick-item:hover .source-title{color:var(--ink);}
+
+.news-item{padding:12px 0;border-top:1px solid var(--border);cursor:pointer;}
+.news-item:first-of-type{border-top:none;padding-top:0;}
+.news-item .headline{font-size:13.5px;font-weight:600;}
+.news-item:hover .headline{text-decoration:underline;}
+.news-item .date{font-size:11px;color:var(--ink-faint);margin-top:3px;}
+.news-note{font-size:11px;color:var(--ink-faint);margin-top:12px;}
+
+.chip{border:1px solid var(--border);background:var(--bg);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--ink-soft);}
+.chip:hover{border-color:var(--ink);color:var(--ink);}
+.chip.active{background:var(--ink);border-color:var(--ink);color:#fff;}
+.active-filters{display:flex;gap:8px;flex-wrap:wrap;margin:-8px 0 14px;}
+.count{font-size:12px;color:var(--ink-faint);margin-bottom:6px;}
+
+table.data-table{width:100%;max-width:880px;border-collapse:collapse;font-size:13px;table-layout:fixed;}
+table.data-table col.c-owner{width:84px;}
+table.data-table col.c-date{width:74px;}
+table.data-table col.c-action{width:104px;}
+table.data-table thead th{text-align:left;font-size:11.5px;color:var(--ink-faint);font-weight:600;padding:0 10px 8px 0;border-bottom:1px solid var(--border);}
+table.data-table tbody td{padding:11px 10px 11px 0;border-bottom:1px solid var(--border);vertical-align:middle;}
+table.data-table tbody tr:hover{background:var(--row-hover);}
+table.data-table .r-name{display:flex;align-items:center;gap:10px;cursor:pointer;}
+table.data-table .r-ic{width:30px;height:30px;border-radius:7px;background:var(--sidebar);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+table.data-table .r-title{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+table.data-table .r-tags{color:var(--ink-faint);font-size:11.5px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+table.data-table .r-actions{white-space:nowrap;}
+.icon-btn{border:none;background:none;color:var(--ink-faint);font-size:16px;padding:2px 5px;border-radius:6px;}
+.icon-btn:hover{background:var(--row-hover);color:var(--ink);}
+.icon-btn.active{color:var(--warn);}
+.empty{color:var(--ink-faint);font-size:12.5px;padding:18px 0;}
+
+.pv-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:flex-start;}
+.pv-title{font-size:18px;margin:0;}
+.pv-sub{color:var(--ink-faint);font-size:12px;margin-top:2px;}
+.pv-actions{display:flex;gap:8px;}
+.pv-note{background:#fff7e6;color:#8a5a00;border:1px solid #f0e0b8;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:16px;}
+table.sheet{width:100%;border-collapse:collapse;font-size:13px;border:1px solid var(--border);}
+table.sheet th{background:var(--sidebar);text-align:left;font-size:11.5px;color:var(--ink-soft);padding:8px 12px;border-bottom:1px solid var(--border);}
+table.sheet td{padding:9px 12px;border-bottom:1px solid var(--border);}
+table.sheet td.num,table.sheet th.num{text-align:right;}
+table.sheet tfoot td{font-weight:700;background:var(--sidebar);}
+.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.k-col{background:var(--sidebar);border:1px solid var(--border);border-radius:10px;padding:12px;}
+.k-col h4{margin:0 0 10px;font-size:12px;color:var(--ink-soft);}
+.k-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;font-size:12.5px;}
+
+.modal-backdrop{position:fixed;inset:0;background:rgba(15,16,18,.4);display:none;align-items:flex-start;justify-content:center;padding:6vh 16px;z-index:50;overflow:auto;}
+.modal-backdrop.show{display:flex;}
+.modal{background:var(--bg);border-radius:14px;max-width:480px;width:100%;padding:24px 26px;box-shadow:0 24px 60px rgba(0,0,0,.2);}
+.modal.wide{max-width:540px;}
+.modal h3{margin:0 0 4px;font-size:16px;}
+.modal .close{float:right;border:none;background:none;font-size:16px;color:var(--ink-faint);}
+.modal .lead{color:var(--ink-faint);font-size:12px;margin:0 0 14px;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:4px;}
+.field input,.field select,.field textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.inline-row{display:flex;gap:8px;}
+.inline-row .btn{white-space:nowrap;}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap;}
+.detail-row{margin-bottom:10px;font-size:13px;}
+.detail-row .k{color:var(--ink-faint);font-size:11px;margin-bottom:2px;}
+details.guide{border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:10px;}
+details.guide summary{cursor:pointer;font-size:12.5px;color:var(--ink-soft);}
+details.guide ul{margin:8px 0 2px;padding-left:18px;font-size:12.5px;}
+.success-box{background:var(--highlight-soft);color:var(--highlight);border-radius:8px;padding:12px;font-size:13px;margin-top:4px;}
+.flow-box{background:var(--sidebar);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--ink-soft);margin-bottom:14px;}
+.flow-box b{color:var(--ink);}
+
+.toast-wrap{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.toast{background:var(--ink);color:#fff;padding:9px 16px;border-radius:999px;font-size:12.5px;opacity:0;transform:translateY(6px);transition:all .2s;}
+.toast.show{opacity:1;transform:translateY(0);}
+
+.codex-panel{display:flex;flex-direction:column;gap:10px;max-height:360px;overflow:auto;margin-bottom:12px;}
+.bubble{border-radius:10px;padding:10px 12px;font-size:13px;max-width:92%;}
+.bubble.from-codex{background:var(--sidebar);align-self:flex-start;}
+.bubble.from-portal{background:var(--highlight-soft);color:var(--highlight);align-self:flex-end;}
+.bubble .tag{font-size:10px;text-transform:uppercase;letter-spacing:.03em;opacity:.7;display:block;margin-bottom:3px;}
+
+@media (max-width:760px){
+  .sidebar{position:fixed;inset:0 auto 0 0;z-index:40;transform:translateX(-100%);transition:transform .2s;box-shadow:0 0 40px rgba(0,0,0,.15);}
+  .sidebar.open{transform:translateX(0);}
+  #menuBtn{display:inline-block;}
+  .topbar{padding:12px 16px;flex-wrap:wrap;}
+  .topbar .search{width:100%;margin-left:0;}
+  .content{padding:18px 16px 60px;}
+  .stat-row,.home-row,.kanban{grid-template-columns:1fr;}
+  .field-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="prototype-flag">DESIGN PROTOTYPE B — 画面確認用・サンプルデータ／実際のログイン・保存・配信は行われません</div>
+
+<div class="shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><div class="brand-mark">J</div>業務ポータル</div>
+
+    <div class="sidebar-btns">
+      <button class="sidebar-btn" id="openRegister">＋ リンクを登録</button>
+      <button class="sidebar-btn sidebar-btn-accent" id="openCodexNav">⌘ Codexと連携</button>
+      <button class="sidebar-btn sidebar-btn-accent" id="openSlackNav">💬 Slack連携</button>
+    </div>
+
+    <div class="nav-group">
+      <button class="nav-link" data-nav="home" id="navHome">ホーム</button>
+      <button class="nav-link" data-nav="all" id="navAll">すべての資料・ツール</button>
+      <button class="nav-link" data-nav="mine" id="navMine">自分の資料</button>
+      <button class="nav-link" data-nav="saved" id="navSaved">保存済み <span class="count" id="savedCount"></span></button>
+    </div>
+
+    <div id="subNav"></div>
+
+    <div class="sidebar-foot">
+      <div class="avatar">S</div>
+      <div>
+        <div class="who">sha</div>
+        <div class="mail">Googleアカウント（サンプル）</div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <button id="menuBtn" aria-label="メニュー">☰</button>
+      <nav class="crumbs" id="crumbs"></nav>
+      <div class="search">
+        <span class="ic">⌕</span>
+        <input id="quickSearch" type="text" placeholder="業務名・資料・キーワードで検索">
+      </div>
+    </div>
+    <div class="content" id="page"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="detailModal">
+  <div class="modal">
+    <button class="close" data-close>×</button>
+    <h3 id="detailTitle"></h3>
+    <p class="lead" id="detailMeta" style="margin-bottom:12px;"></p>
+    <div id="detailLockNotice" style="display:none;background:var(--sidebar);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12.5px;color:var(--ink-soft);margin-bottom:12px;">
+      🔒 このリポジトリは限定共有です。閲覧には登録者の承認が必要です。
+    </div>
+    <div class="detail-row"><div class="k">用途</div><div id="detailPurpose"></div></div>
+    <div class="detail-row"><div class="k">分類・タグ</div><div id="detailClass"></div></div>
+    <div class="detail-row"><div class="k">リンク先</div><div id="detailLink"></div></div>
+    <div class="detail-row"><div class="k">共有範囲</div><div id="detailShare"></div></div>
+    <details class="guide"><summary>利用ガイド（AI生成）</summary><div id="detailGuide"></div></details>
+    <div id="detailSlackPreview" class="codex-panel" style="display:none;margin-top:4px;"></div>
+    <div class="modal-actions">
+      <button class="btn" data-close>閉じる</button>
+      <button class="btn" id="detailOpen">開く ↗</button>
+      <button class="btn primary" id="detailSaveToggle"></button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="registerModal">
+  <div class="modal wide">
+    <button class="close" data-close>×</button>
+    <h3>リンクを登録</h3>
+    <p class="lead">リンクだけ登録します。コードはGitHub、その他のファイルはGoogle Driveに置いたままで構いません。</p>
+    <div class="flow-box"><b>Codexなら一言で完了：</b>「この成果物を業務ポータルに登録して共有して」<br>① 投稿ルールを取得 → ② 不足情報だけ質問 → ③ 利用ガイドを生成 → ④ 本人確認・登録</div>
+
+    <div class="field"><label>タイトル</label><input id="rTitle" type="text" placeholder="例：来場者アンケート集計シート"></div>
+    <div class="field"><label>URL（GitHub／Google Drive／公開先）</label><input id="rUrl" type="text" placeholder="https://..."></div>
+    <div class="field-row">
+      <div class="field"><label>セクション</label><select id="rSection"></select></div>
+      <div class="field"><label>大会</label><select id="rTournament"></select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>タグ</label><input id="rTag" type="text" placeholder="例：Voucher"></div>
+      <div class="field"><label>共有範囲</label>
+        <select id="rShare"><option>全社共通</option><option>指定アカウントのみ</option></select>
+      </div>
+    </div>
+    <div class="field">
+      <label>一言ベネフィット（他部署の人が見て分かる言葉で）</label>
+      <div class="inline-row">
+        <input id="rBenefit" type="text" placeholder="例：来場者対応の確認作業をその場で終わらせられます">
+        <button class="btn" id="draftBenefit" type="button">AIに下書き</button>
+      </div>
+    </div>
+    <details class="guide">
+      <summary>利用ガイド（AIが下書き・本人が確認）</summary>
+      <div class="field" style="margin:10px 0 0;">
+        <textarea id="rGuide" rows="4" placeholder="用途・必要情報・操作方法・注意事項"></textarea>
+        <div style="margin-top:8px;"><button class="btn" id="draftGuide" type="button">AIに下書き</button></div>
+      </div>
+    </details>
+
+    <div id="registerSuccess"></div>
+    <div class="modal-actions">
+      <button class="btn" data-close>キャンセル</button>
+      <button class="btn primary" id="registerSubmit">登録する</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="codexModal">
+  <div class="modal" style="max-width:440px;">
+    <button class="close" data-close>×</button>
+    <h3 id="codexModalTitle"></h3>
+    <p class="lead" id="codexModalSub"></p>
+    <div class="codex-panel" id="codexPanel"></div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+const SECTIONS = ["ディレクター","トーナメント","メディア","カスタマー","クリエイティブ","ロジスティックス","マーケティング","営業","インフルエンサー","その他"];
+const TOURNAMENTS = ["JOPT","SPADIE","戦国","U-30"];
+const QUICK_TAGS = ["Voucher","Ticket","バナー"];
+
+const MATERIALS = [
+  {id:1,title:"Voucher関連資料",section:"カスタマー",tournament:"JOPT",round:"#03",tag:"Voucher",type:"資料",link:"Google Drive",purpose:"来場者向けVoucherの発行条件と利用ルールの確認用。",share:"全社共通",owner:"sha",updated:"11月14日",
+    guide:{need:"Voucherの種類と発行条件",how:"ドキュメントを開き、該当する大会のページを確認する",note:"発行条件は大会ごとに異なります"}},
+  {id:2,title:"Ticket管理シート",section:"カスタマー",tournament:"JOPT",round:"#03",tag:"Ticket",type:"ツール",link:"Google Drive",purpose:"チケット販売・入場実績の記録と集計。",share:"全社共通",owner:"他メンバー",updated:"11月13日",preview:"sheet",
+    guide:{need:"大会名・開催回",how:"シートを開き、日付ごとの販売数・入場数を確認する",note:"入力は当日担当のみ"}},
+  {id:3,title:"大会運営マニュアル",section:"トーナメント",tournament:"JOPT",round:"#03",tag:"運営",type:"資料",link:"Google Drive",purpose:"当日の運営フローとスタッフ配置の確認用。",share:"全社共通",owner:"他メンバー",updated:"11月10日",
+    guide:{need:"担当ポジション",how:"自分の担当ページから当日の動線を確認する",note:"大会前日に最新版を確認してください"}},
+  {id:4,title:"配信用クリエイティブ",section:"クリエイティブ",tournament:"SPADIE",round:"",tag:"メディア",type:"資料",link:"Google Drive",purpose:"配信画面用の素材一式。",share:"指定アカウントのみ",owner:"sha",updated:"11月9日"},
+  {id:5,title:"搬入チェックリスト",section:"ロジスティックス",tournament:"戦国",round:"",tag:"会場",type:"資料",link:"Google Drive",purpose:"会場搬入時の確認項目一覧。",share:"全社共通",owner:"他メンバー",updated:"11月6日"},
+  {id:6,title:"企画書テンプレート",section:"マーケティング",tournament:"共通",round:"",tag:"企画",type:"ツール",link:"Google Drive",purpose:"新規企画の提出用フォーマット。",share:"全社共通",owner:"sha",updated:"11月2日"},
+  {id:7,title:"大会運営スクリプト（GitHub）",section:"トーナメント",tournament:"JOPT",round:"#03",tag:"自動化",type:"ツール",link:"GitHub（限定公開）",purpose:"大会当日の集計作業を自動化するスクリプト。GitHubの限定公開リポジトリで管理。",share:"指定アカウントのみ",owner:"他メンバー",updated:"11月15日",hasAccess:false},
+  {id:8,title:"JOPTスタートバナーツール",section:"クリエイティブ",tournament:"JOPT",round:"#03",tag:"バナー",type:"ツール",link:"公開先（Cloudflare）",purpose:"JOPTのスタートバナーを一気に作成できます。前回の構成に合わせて出力されます。",share:"全社共通",owner:"他メンバー",updated:"11月8日",
+    guide:{need:"大会名・競技名",how:"ツールを開き、大会名を入力するとバナーが生成される",note:"生成後は必ず目視で確認してください"}},
+  {id:9,title:"クリエイティブのタスクボード",section:"クリエイティブ",tournament:"共通",round:"",tag:"タスク管理",type:"ツール",link:"公開先（Cloudflare）",purpose:"Slackで口頭で頼まれたことをAIが読み取り、着手済みかどうかを自動で判断します。",share:"全社共通",owner:"他メンバー",updated:"11月7日",preview:"kanban"},
+  {id:10,title:"協賛提案テンプレート",section:"営業",tournament:"U-30",round:"",tag:"協賛",type:"資料",link:"Google Drive",purpose:"協賛企業向けの提案書の雛形。",share:"全社共通",owner:"他メンバー",updated:"11月4日"},
+  {id:11,title:"Grok Bot 写真探しの実力 レポート",section:"メディア",tournament:"共通",round:"",tag:"AI設定",type:"資料",link:"Google Drive",purpose:"過去実績を参考に、似た写真を提案できるかを検証したレポート。",share:"全社共通",owner:"他メンバー",updated:"11月3日"},
+  {id:12,title:"大会振り返りシート",section:"ディレクター",tournament:"JOPT",round:"#02",tag:"振り返り",type:"ツール",link:"Google Drive",purpose:"大会終了後の振り返りを項目ごとに記録するシート。",share:"全社共通",owner:"他メンバー",updated:"11月1日"},
+];
+
+const NEWS = [
+  {headline:"OpenAIが新しいGPTモデルを発表（表示例）",date:"11月14日"},
+  {headline:"Anthropicが法人向けClaudeプランを値下げ（表示例）",date:"11月12日"},
+  {headline:"資料作成・問い合わせ対応に使える新しいAIツールが続々登場（表示例）",date:"11月10日"},
+];
+
+const PICKS = [
+  {materialId:2, dept:"カスタマー部門より", benefit:"チケットの売上や入場状況を聞かれても、このシートですぐ確認できます。"},
+  {materialId:3, dept:"トーナメント部門より", benefit:"当日の動線が分からない時、まずこれを見れば迷いません。"},
+  {materialId:5, dept:"ロジスティックス部門より", benefit:"会場搬入に立ち会う時、何を確認すればいいか一目で分かります。"},
+];
+
+const SHEET_ROWS = [
+  ["11/08","JOPT #03 Day1",128,96,384000],
+  ["11/09","JOPT #03 Day2",152,131,456000],
+  ["11/10","JOPT #03 Day3",97,88,291000],
+  ["11/14","JOPT #04 Day1",140,112,420000],
+  ["11/15","JOPT #04 Day2",165,140,495000],
+];
+const KANBAN = [
+  {name:"未着手",cards:["スタートバナー 地方版の修正","配信画面の素材整理"]},
+  {name:"進行中",cards:["Slack依頼の自動取り込みの確認","大会ロゴの差し替え"]},
+  {name:"完了",cards:["SPADIE キービジュアル納品","搬入ポスターの入稿"]},
+];
+
+let saved = new Set([2,4]);
+let accessRequested = new Set();
+const state = {view:'home',scope:'all',section:null,tournament:null,round:null,tag:null,kw:'',previewId:null,open:{sections:false,events:false}};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const byId = id => MATERIALS.find(m => m.id === id);
+
+function toast(msg){
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  $('toastWrap').appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('show'));
+  setTimeout(()=>{el.classList.remove('show'); setTimeout(()=>el.remove(),200);}, 2400);
+}
+
+function filtered(){
+  const kw = state.kw.trim().toLowerCase();
+  return MATERIALS.filter(m=>{
+    if(state.scope==='mine' && m.owner!=='sha') return false;
+    if(state.scope==='saved' && !saved.has(m.id)) return false;
+    if(state.section && m.section!==state.section) return false;
+    if(state.tournament && m.tournament!==state.tournament) return false;
+    if(state.round && m.round!==state.round) return false;
+    if(state.tag && m.tag!==state.tag) return false;
+    if(kw && !(m.title+m.tag+m.tournament+m.section+m.purpose).toLowerCase().includes(kw)) return false;
+    return true;
+  });
+}
+
+function hasFilter(){ return !!(state.section||state.tournament||state.round||state.tag||state.kw); }
+
+function go(patch){
+  Object.assign(state, patch);
+  render();
+  window.scrollTo(0,0);
+}
+function goList(patch){
+  go(Object.assign({view:'list',scope:'all',section:null,tournament:null,round:null,tag:null,kw:''}, patch||{}));
+  $('quickSearch').value = state.kw;
+}
+function navTo(k){
+  if(k==='home'){ go({view:'home',kw:''}); $('quickSearch').value=''; }
+  else if(k==='all') goList({});
+  else if(k==='mine') goList({scope:'mine'});
+  else if(k==='saved') goList({scope:'saved'});
+}
+
+function tagChips(){
+  const jActive = state.tournament==='JOPT' && state.round==='#03';
+  return QUICK_TAGS.map(t=>`<button class="chip ${state.view==='list'&&state.tag===t?'active':''}" data-tag="${t}">${t}</button>`).join('')
+    + `<button class="chip ${state.view==='list'&&jActive?'active':''}" data-quick="jopt03">JOPT #03</button>`;
+}
+
+function matRow(m){
+  const locked = m.hasAccess===false;
+  const isSaved = saved.has(m.id);
+  return `<tr>
+    <td><div class="r-name" data-open="${m.id}">
+      <div class="r-ic">${locked?'🔒':(m.type==='ツール'?'🛠':'📄')}</div>
+      <div style="min-width:0;">
+        <div class="r-title">${esc(m.title)}</div>
+        <div class="r-tags">${esc(m.section)} ・ ${esc(m.tournament)}${m.round?' '+esc(m.round):''} ・ #${esc(m.tag)}${locked?' ・ 限定共有':''}</div>
+      </div>
+    </div></td>
+    <td>${m.owner==='sha'?'自分':esc(m.owner)}</td>
+    <td>${esc(m.updated)}</td>
+    <td class="r-actions">
+      <button class="icon-btn" data-openlink="${m.id}" title="開く">↗</button>
+      <button class="icon-btn" data-download="${m.id}" title="ダウンロード">↓</button>
+      <button class="icon-btn ${isSaved?'active':''}" data-save="${m.id}" title="保存済みに追加/解除">${isSaved?'★':'☆'}</button>
+    </td>
+  </tr>`;
+}
+
+function pageHome(){
+  const picks = PICKS.map(p=>{
+    const m = byId(p.materialId);
+    return `<div class="pick-item" data-open="${m.id}">
+      <div class="dept-tag">${esc(p.dept)}</div>
+      <div class="benefit">${esc(p.benefit)}</div>
+      <div class="source-title">${esc(m.title)} を見る ↗</div>
+    </div>`;
+  }).join('');
+  const news = NEWS.map(n=>`<div class="news-item" data-news><div class="headline">${esc(n.headline)} ↗</div><div class="date">${esc(n.date)}</div></div>`).join('');
+  return `
+    <div class="stat-row">
+      <div class="stat-card"><div class="label">登録されている資料・ツール</div><div class="value">${MATERIALS.length}件</div></div>
+      <div class="stat-card"><div class="label">他部署からのピックアップ</div><div class="value">${PICKS.length}件</div></div>
+      <div class="stat-card"><div class="label">保存済み</div><div class="value">${saved.size}件</div></div>
+    </div>
+    <div class="tag-line"><span>タグから探す</span>${tagChips()}</div>
+    <div class="home-row">
+      <div>
+        <h2 class="section-title">今週、他部署のこんな資料が使えます</h2>
+        <div class="pick-list">${picks}</div>
+      </div>
+      <div>
+        <h2 class="section-title">AIニュース<span class="faint">ML Bear Times · RSS表示例</span></h2>
+        ${news}
+        <div class="news-note">※見出しは表示例です。実際の最新報道ではありません。</div>
+      </div>
+    </div>`;
+}
+
+function pageList(){
+  const list = filtered();
+  const active = [];
+  if(state.scope==='mine') active.push(['scope','自分の資料']);
+  if(state.scope==='saved') active.push(['scope','保存済み']);
+  if(state.section) active.push(['section','セクション: '+state.section]);
+  if(state.tournament) active.push(['tournament','大会: '+state.tournament]);
+  if(state.round) active.push(['round','開催回: '+state.round]);
+  if(state.tag) active.push(['tag','タグ: '+state.tag]);
+  if(state.kw) active.push(['kw','キーワード: '+state.kw]);
+  const rows = list.map(matRow).join('') || `<tr><td colspan="4" class="empty">該当する資料・ツールがありません。</td></tr>`;
+  return `
+    <div class="tag-line"><span>タグから探す</span>${tagChips()}</div>
+    ${active.length?`<div class="active-filters">${active.map(([k,l])=>`<button class="chip active" data-clear="${k}">${esc(l)} ×</button>`).join('')}</div>`:''}
+    <div class="count">該当${list.length}件</div>
+    <table class="data-table">
+      <colgroup><col><col class="c-owner"><col class="c-date"><col class="c-action"></colgroup>
+      <thead><tr><th>資料・ツール</th><th>登録者</th><th>更新日</th><th>操作</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function sheetHtml(){
+  const body = SHEET_ROWS.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td><td class="num">¥${r[4].toLocaleString('ja-JP')}</td></tr>`).join('');
+  const sum = i => SHEET_ROWS.reduce((a,r)=>a+r[i],0);
+  return `<table class="sheet">
+    <thead><tr><th>日付</th><th>大会・開催回</th><th class="num">販売枚数</th><th class="num">入場者数</th><th class="num">売上</th></tr></thead>
+    <tbody>${body}</tbody>
+    <tfoot><tr><td colspan="2">合計</td><td class="num">${sum(2)}</td><td class="num">${sum(3)}</td><td class="num">¥${sum(4).toLocaleString('ja-JP')}</td></tr></tfoot>
+  </table>`;
+}
+function kanbanHtml(){
+  return `<div class="kanban">${KANBAN.map(c=>`<div class="k-col"><h4>${c.name}（${c.cards.length}）</h4>${c.cards.map(t=>`<div class="k-card">${esc(t)}</div>`).join('')}</div>`).join('')}</div>`;
+}
+function pagePreview(){
+  const m = byId(state.previewId);
+  return `
+    <div class="pv-head">
+      <div>
+        <h2 class="pv-title">${esc(m.title)}</h2>
+        <div class="pv-sub">${esc(m.section)} ・ ${esc(m.tournament)}${m.round?' '+esc(m.round):''} ・ #${esc(m.tag)}</div>
+      </div>
+      <div class="pv-actions">
+        <button class="btn" data-back>← 一覧に戻る</button>
+        <button class="btn" data-open="${m.id}">詳細</button>
+      </div>
+    </div>
+    <div class="pv-note">サンプル表示です。実際は ${esc(m.link)} のリンク先がそのまま開きます。</div>
+    ${m.preview==='sheet'?sheetHtml():kanbanHtml()}`;
+}
+
+function renderCrumbs(){
+  const link = (label,nav)=>`<button class="crumb" data-nav="${nav}">${esc(label)}</button>`;
+  const cur = label=>`<span class="crumb-cur">${esc(label)}</span>`;
+  const parts = [];
+  if(state.view==='home'){ parts.push(cur('ホーム')); }
+  else if(state.view==='preview'){ parts.push(link('ホーム','home'), link('資料・ツール','all'), cur(byId(state.previewId).title)); }
+  else {
+    const sub = [];
+    if(state.scope==='mine') sub.push('自分の資料');
+    if(state.scope==='saved') sub.push('保存済み');
+    if(state.section) sub.push('セクション: '+state.section);
+    if(state.tournament) sub.push('大会: '+state.tournament+(state.round?' '+state.round:''));
+    if(state.tag) sub.push('タグ: '+state.tag);
+    if(state.kw) sub.push('検索: '+state.kw);
+    parts.push(link('ホーム','home'));
+    if(sub.length){ parts.push(link('資料・ツール','all'), cur(sub.join(' / '))); }
+    else parts.push(cur('資料・ツール'));
+  }
+  $('crumbs').innerHTML = parts.join('<span class="crumb-sep">›</span>');
+}
+
+function renderNav(){
+  const listView = state.view==='list';
+  $('navHome').classList.toggle('active', state.view==='home');
+  $('navAll').classList.toggle('active', listView && state.scope==='all' && !hasFilter());
+  $('navMine').classList.toggle('active', listView && state.scope==='mine' && !hasFilter());
+  $('navSaved').classList.toggle('active', listView && state.scope==='saved' && !hasFilter());
+  $('savedCount').textContent = saved.size ? `(${saved.size})` : '';
+
+  const secOpen = state.open.sections || !!state.section;
+  const evOpen = state.open.events || !!state.tournament;
+  const sub = (attr,val,label,n,active)=>`<button class="nav-link nav-sub ${active?'active':''}" data-${attr}="${esc(val)}">${esc(label)}<span class="count">${n}</span></button>`;
+  $('subNav').innerHTML = `
+    <div class="nav-group">
+      <button class="nav-link nav-parent" data-toggle="sections">セクションから探す<span class="chev ${secOpen?'open':''}">›</span></button>
+      ${secOpen?SECTIONS.map(s=>sub('section',s,s,MATERIALS.filter(m=>m.section===s).length,listView&&state.section===s)).join(''):''}
+    </div>
+    <div class="nav-group">
+      <button class="nav-link nav-parent" data-toggle="events">大会から探す<span class="chev ${evOpen?'open':''}">›</span></button>
+      ${evOpen?TOURNAMENTS.map(t=>sub('tournament',t,t,MATERIALS.filter(m=>m.tournament===t).length,listView&&state.tournament===t)).join(''):''}
+    </div>`;
+}
+
+function render(){
+  renderNav();
+  renderCrumbs();
+  $('page').innerHTML = state.view==='home' ? pageHome() : state.view==='preview' ? pagePreview() : pageList();
+}
+
+function openModal(id){ $(id).classList.add('show'); }
+function closeModal(id){ $(id).classList.remove('show'); }
+function closeSidebar(){ $('sidebar').classList.remove('open'); }
+
+function toggleSave(id){
+  if(saved.has(id)){ saved.delete(id); toast('保存済みから解除しました'); }
+  else { saved.add(id); toast('保存済みに追加しました'); }
+  render();
+}
+
+function openItem(id){
+  const m = byId(id);
+  if(m.hasAccess===false){ openDetail(id); toast('権限が必要です。リクエストを送信できます'); return; }
+  if(m.preview){ closeModal('detailModal'); go({view:'preview',previewId:id}); return; }
+  toast(`サンプルのためリンク先はありません（実際は${m.link}が開きます）`);
+}
+
+function openDetail(id){
+  const m = byId(id);
+  const locked = m.hasAccess===false;
+  $('detailTitle').textContent = m.title;
+  $('detailMeta').textContent = `${m.type} ・ 最終更新 ${m.updated} ・ 登録者：${m.owner==='sha'?'自分':m.owner}`;
+  $('detailPurpose').textContent = m.purpose;
+  $('detailClass').textContent = `${m.section} ／ ${m.tournament}${m.round?' '+m.round:''} ／ #${m.tag}`;
+  $('detailLink').textContent = m.link;
+  $('detailShare').textContent = m.share;
+  $('detailGuide').innerHTML = m.guide
+    ? `<ul><li>必要な情報：${esc(m.guide.need)}</li><li>操作方法：${esc(m.guide.how)}</li><li>注意事項：${esc(m.guide.note)}</li></ul>`
+    : `<div style="font-size:12.5px;color:var(--ink-faint);margin-top:8px;">利用ガイドはまだありません。登録時にAIが下書きします。</div>`;
+  $('detailLockNotice').style.display = locked ? 'block' : 'none';
+  const slack = $('detailSlackPreview');
+  slack.style.display = 'none';
+  slack.innerHTML = '';
+
+  const open = $('detailOpen');
+  open.onclick = ()=>{ if(locked) toast('権限が必要です。リクエストを送信してください'); else openItem(id); };
+
+  const btn = $('detailSaveToggle');
+  btn.disabled = false;
+  if(locked){
+    if(accessRequested.has(id)){ btn.textContent = 'リクエスト送信済み'; btn.disabled = true; btn.onclick = null; }
+    else {
+      btn.textContent = 'Slackでアクセスをリクエスト';
+      btn.onclick = ()=>{
+        accessRequested.add(id);
+        toast('Slackでリクエストを送信しました');
+        slack.style.display = 'flex';
+        slack.innerHTML = `
+          <div class="bubble from-portal"><span class="tag">#資料リクエスト</span>sha さんが「${esc(m.title)}」へのアクセスをリクエストしました。</div>
+          <div class="bubble from-codex"><span class="tag">${esc(m.owner)}</span>承認しました。GitHubの招待を送ります。</div>`;
+        btn.textContent = 'リクエスト送信済み';
+        btn.disabled = true;
+      };
+    }
+  } else {
+    btn.textContent = saved.has(id) ? '保存済みを解除' : '保存済みに追加';
+    btn.onclick = ()=>{ toggleSave(id); closeModal('detailModal'); };
+  }
+  openModal('detailModal');
+}
+
+function showIntegration(kind){
+  if(kind==='codex'){
+    $('codexModalTitle').textContent = 'Codexと連携（プレビュー）';
+    $('codexModalSub').textContent = 'Codexから検索・取得・登録ができる様子の確認用イメージです。実際の接続は行われません。';
+    $('codexPanel').innerHTML = `
+      <div class="bubble from-portal"><span class="tag">sha → Codex</span>Voucherの資料を探して</div>
+      <div class="bubble from-codex"><span class="tag">Codex</span>「Voucher関連資料」（カスタマー・JOPT #03）が見つかりました。リンクを開きますか？</div>
+      <div class="bubble from-portal"><span class="tag">sha → Codex</span>この成果物を業務ポータルに登録して共有して</div>
+      <div class="bubble from-codex"><span class="tag">Codex</span>投稿ルールを確認しました。セクションは「カスタマー」でよいですか？ 他は自動で入力します。</div>
+      <div class="bubble from-codex"><span class="tag">Codex</span>利用ガイドを作成しました。内容を確認して「登録」と答えてください。</div>
+      <div class="bubble from-portal"><span class="tag">業務ポータル（表示例）</span>${esc(NEWS[0].headline)}</div>`;
+  } else {
+    $('codexModalTitle').textContent = 'Slack連携（プレビュー）';
+    $('codexModalSub').textContent = '登録やアクセスリクエストが、Slackのチャンネルに自動で届く様子の確認用イメージです。実際の接続は行われません。';
+    $('codexPanel').innerHTML = `
+      <div class="bubble from-portal"><span class="tag">#業務ポータル通知</span>新しい資料が登録されました：「配信用クリエイティブ」（クリエイティブ）</div>
+      <div class="bubble from-codex"><span class="tag">#資料リクエスト</span>sha さんが「大会運営スクリプト（GitHub）」へのアクセスをリクエストしました。</div>
+      <div class="bubble from-portal"><span class="tag">業務ポータルより</span>Slack連携をオンにすると、登録・アクセスリクエストの通知が自動でチャンネルに届きます。</div>`;
+  }
+  openModal('codexModal');
+}
+
+document.addEventListener('click', e=>{
+  const t = e.target;
+  const q = sel => t.closest(sel);
+  let el;
+  if(q('[data-close]')){ t.closest('.modal-backdrop').classList.remove('show'); return; }
+  if((el = q('[data-nav]'))){ navTo(el.dataset.nav); closeSidebar(); return; }
+  if((el = q('[data-toggle]'))){ state.open[el.dataset.toggle] = !state.open[el.dataset.toggle]; render(); return; }
+  if((el = q('[data-section]'))){ goList({section:el.dataset.section}); closeSidebar(); return; }
+  if((el = q('[data-tournament]'))){ goList({tournament:el.dataset.tournament}); closeSidebar(); return; }
+  if((el = q('[data-tag]'))){
+    const tag = el.dataset.tag;
+    if(state.view==='list') go({tag: state.tag===tag ? null : tag}); else goList({tag});
+    return;
+  }
+  if((el = q('[data-quick]'))){
+    const on = state.view==='list' && state.tournament==='JOPT' && state.round==='#03';
+    if(state.view==='list') go(on ? {tournament:null,round:null} : {tournament:'JOPT',round:'#03'});
+    else goList({tournament:'JOPT',round:'#03'});
+    return;
+  }
+  if((el = q('[data-clear]'))){
+    const k = el.dataset.clear;
+    if(k==='scope') go({scope:'all'});
+    else if(k==='kw'){ go({kw:''}); $('quickSearch').value=''; }
+    else if(k==='tournament') go({tournament:null,round:null});
+    else go({[k]:null});
+    return;
+  }
+  if(q('[data-back]')){ goList({}); return; }
+  if((el = q('[data-save]'))){ toggleSave(Number(el.dataset.save)); return; }
+  if((el = q('[data-openlink]'))){ openItem(Number(el.dataset.openlink)); return; }
+  if((el = q('[data-download]'))){
+    const m = byId(Number(el.dataset.download));
+    toast(m.hasAccess===false ? '権限がありません。詳細からリクエストできます' : `ダウンロードは${m.link}のリンク先から行います（サンプル）`);
+    return;
+  }
+  if(q('[data-news]')){ toast('外部記事のページへ移動します（表示例）'); return; }
+  if((el = q('[data-open]'))){ openDetail(Number(el.dataset.open)); return; }
+});
+
+$('menuBtn').addEventListener('click', ()=> $('sidebar').classList.toggle('open'));
+
+$('quickSearch').addEventListener('input', e=>{
+  state.kw = e.target.value;
+  if(state.view!=='list') state.view = 'list';
+  render();
+});
+
+$('openCodexNav').addEventListener('click', ()=>{ showIntegration('codex'); closeSidebar(); });
+$('openSlackNav').addEventListener('click', ()=>{ showIntegration('slack'); closeSidebar(); });
+$('openRegister').addEventListener('click', ()=>{ $('registerSuccess').innerHTML=''; openModal('registerModal'); closeSidebar(); });
+
+$('draftBenefit').addEventListener('click', ()=>{
+  const title = $('rTitle').value || 'この資料';
+  $('rBenefit').value = `${title}を探す手間がなくなり、他部署からもすぐ使えるようになります。`;
+  toast('AIが下書きしました。内容を確認・修正してください');
+});
+$('draftGuide').addEventListener('click', ()=>{
+  const title = $('rTitle').value || 'この資料';
+  $('rGuide').value = `用途：${title}の確認・利用\n必要な情報：大会名・開催回\n操作方法：リンクを開き、該当ページを確認する\n注意事項：最新版かどうかを確認してから使う`;
+  toast('AIが下書きしました。内容を確認・修正してください');
+});
+
+$('registerSubmit').addEventListener('click', ()=>{
+  const title = $('rTitle').value.trim();
+  if(!title){ toast('タイトルを入力してください'); return; }
+  const id = Math.max(...MATERIALS.map(m=>m.id)) + 1;
+  const g = $('rGuide').value.trim();
+  MATERIALS.unshift({
+    id, title,
+    section:$('rSection').value, tournament:$('rTournament').value, round:'',
+    tag:$('rTag').value.trim() || 'その他',
+    type:'資料', link:$('rUrl').value.trim() ? 'リンク先' : 'Google Drive',
+    purpose:$('rBenefit').value.trim() || '登録されたばかりの資料です。',
+    share:$('rShare').value, owner:'sha', updated:'今日',
+    guide: g ? {need:'（利用ガイドを参照）',how:g.split('\n')[0],note:'登録者が確認済み'} : undefined
+  });
+  $('registerSuccess').innerHTML = `<div class="success-box">「${esc(title)}」を登録しました（サンプル動作・ページを再読み込みすると消えます）</div>`;
+  toast('登録しました');
+  render();
+});
+
+(function init(){
+  $('rSection').innerHTML = SECTIONS.map(s=>`<option>${s}</option>`).join('');
+  $('rTournament').innerHTML = [...TOURNAMENTS,'共通'].map(s=>`<option>${s}</option>`).join('');
+  render();
+})();
+</script>
+</body>
+</html>
