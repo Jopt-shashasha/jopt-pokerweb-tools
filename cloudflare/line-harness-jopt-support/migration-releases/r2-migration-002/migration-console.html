@@ -1,0 +1,15 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>R2画像移行</title>
+<style>body{font:16px system-ui;max-width:1000px;margin:40px auto;padding:20px;line-height:1.7}button,a{margin:8px;padding:8px}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f5f7;padding:16px}button:disabled{opacity:.5}</style>
+<h1>R2画像移行</h1><p>Appwrite原本を残して、画像を同じキーでR2へコピーします。撤回・削除済みの画像は対象外です。コピー後に内容を照合します。</p>
+<p><a href="/console/cloudflare-traffic">サービス残量</a><a href="/console/chats">チャットへ戻る</a></p>
+<button id="inspect">対象一覧を確認</button><button id="run" disabled>R2へコピー・照合</button><button id="stop" disabled>次のバッチから停止</button>
+<p id="progress" role="status">未実行</p><pre id="result"></pre>
+<script>
+let keys=[],stopping=false;
+const out=document.getElementById('result'),progress=document.getElementById('progress'),inspect=document.getElementById('inspect'),run=document.getElementById('run'),stop=document.getElementById('stop');
+function log(value){out.textContent+=JSON.stringify(value)+'\n';}
+async function api(path,body){const csrf=document.cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith('lh_csrf='));const response=await fetch(path,{credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf?decodeURIComponent(csrf.slice(8)):''},method:body?'POST':'GET',body:body?JSON.stringify(body):undefined});const value=await response.json();if(!response.ok||!value.success)throw Error(value.error||'取得できません');return value.data;}
+inspect.onclick=async()=>{inspect.disabled=true;run.disabled=true;keys=[];out.textContent='';try{let cursor='',seen=new Set();for(;;){const page=await api('/api/storage-migration/inventory'+(cursor?'?cursor='+encodeURIComponent(cursor):''));keys.push(...page.keys);progress.textContent='確認済み '+keys.length+'件';if(!page.truncated)break;if(!page.cursor||seen.has(page.cursor))throw Error('一覧の続きが取得できません');seen.add(page.cursor);cursor=page.cursor;}keys=[...new Set(keys)];log({listed:keys.length});run.disabled=!keys.length;}catch(e){progress.textContent=e.message;}finally{inspect.disabled=false;}};
+stop.onclick=()=>{stopping=true;stop.disabled=true;};
+run.onclick=async()=>{run.disabled=true;inspect.disabled=true;stop.disabled=false;stopping=false;let done=0,failures=0;try{for(let i=0;i<keys.length&&!stopping;i+=3){const batch=await api('/api/storage-migration/copy',{keys:keys.slice(i,i+3)});for(const result of batch.results){log(result);done++;if(result.status==='failed'||result.status==='conflict_not_overwritten'||result.status==='source_missing')failures++;}progress.textContent=done+'/'+keys.length+'件、要確認 '+failures+'件';}log({done,total:keys.length,failures,stopped:stopping});}catch(e){progress.textContent='停止：'+e.message;}finally{inspect.disabled=false;stop.disabled=true;}};
+</script></html>

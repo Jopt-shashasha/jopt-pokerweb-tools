@@ -1,0 +1,38 @@
+{
+  "release": "r2-migration-002",
+  "status": "PREPARED_NOT_DEPLOYED",
+  "baseVersion": "745f07b7-e847-4fd5-b5d6-dc8567b4a590",
+  "changedModule": "assets/worker-entry-CyzYNkRe.js",
+  "baseSha256": "5c7640afa08531e70cdc17cef92beea1e24447afeac879776f92133e4de130aa",
+  "candidateSha256": "01f9e3a0f46b320e70e068c98465eb81019d89b9e4b71abf5399bc466ba25a64",
+  "capacityChunkPath": "/console/_next/static/chunks/app/cloudflare-traffic/page-9e0ac0ddb884ed24.js",
+  "capacityChunkBaseSha256": "7f3a1df35f6b4bed6e83602894390c785e86cde3db2588848e1825de739d1abc",
+  "capacityChunkSha256": "f0f826fedc25e35c963625609e39f4a7d7d556d678fa7bd3b416c7cd6a880ba4",
+  "retainedBindings": [
+    "DB",
+    "TENANT_SCHEDULER",
+    "ASSETS",
+    "all existing secrets and ordinary variables"
+  ],
+  "newSecretsRequired": false,
+  "d1SchemaChanges": false,
+  "webhookChanges": false,
+  "sourceObjectsDeleted": false,
+  "migrationDefaults": {
+    "R2_MIGRATION_ENABLED": "disabled",
+    "R2_MIGRATION_READS": "disabled",
+    "R2_WRITE_MODE": "test"
+  },
+  "rolloutOrder": [
+    "Archive baseline/release in canonical project",
+    "Recheck deployed version and all module hashes",
+    "Deploy with current personal test only",
+    "Test FAQ upload and writes-off read compatibility",
+    "Enable migration reads then owner-only copying",
+    "Verify every retained image and exclude unsent/deleted images",
+    "Test quota page and global mirror mode",
+    "Switch new images to R2-only all mode",
+    "Disable migration writes",
+    "Record active version and rollback-compatible configuration"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "release": "r2-migration-002",
+  "selectedCandidate": "candidate-rc2",
+  "status": "READY_TO_ARCHIVE_NOT_DEPLOYED",
+  "baseVersion": "745f07b7-e847-4fd5-b5d6-dc8567b4a590",
+  "checks": {
+    "priorPersonalUpload": "PASS",
+    "priorAppwriteIndependentRead": "PASS_HASH_IDENTICAL",
+    "priorWithdrawal": {
+      "status": "PASS",
+      "messageId": "640986243689611929",
+      "r2ObjectAbsent": true,
+      "appwriteObjectAbsent": true,
+      "appwriteCheck": "Authenticated bucket Files: Name equal 2694a159-d7b5-42dd-9c70-64748c5b2084.jpg => No files match your filters",
+      "originalImageUrl": "Image not found",
+      "harnessOriginalImageNoLongerRendered": true,
+      "checkedAt": "2026-11-17T04:38:28.670Z"
+    },
+    "localTests": 28,
+    "localTestsPassed": 28,
+    "candidateReproduction": "PASS",
+    "moduleSyntax": "PASS_8",
+    "untouchedModules": 7,
+    "existingFrontendOverridesPreserved": true
+  },
+  "remaining": [
+    "Canonical project archive (current session cannot write D:/GitHub)",
+    "Deploy only after fresh active-version check",
+    "Live FAQ and writes-off read test",
+    "R2 analytics permission and rendered quota checks",
+    "Copy retained historical images and verify every result",
+    "Global mirror then R2-only rollout",
+    "Migration API disable and final rollback record"
+  ],
+  "productionMigrationPerformed": false,
+  "productionCodeChangedThisPreparation": false
+}

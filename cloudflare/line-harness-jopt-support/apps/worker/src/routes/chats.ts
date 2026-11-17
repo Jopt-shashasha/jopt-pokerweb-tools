@@ -439,9 +439,9 @@ chats.get('/api/chats/:id', async (c) => {
     const createdAt = chatRow?.created_at ?? null;
 
     const friend = await c.env.DB
-      .prepare(`SELECT display_name, picture_url, line_user_id FROM friends WHERE id = ?`)
+      .prepare(`SELECT display_name, picture_url, line_user_id, line_account_id FROM friends WHERE id = ?`)
       .bind(resolvedFriendId)
-      .first<{ display_name: string | null; picture_url: string | null; line_user_id: string }>();
+      .first<{ display_name: string | null; picture_url: string | null; line_user_id: string; line_account_id: string | null }>();
 
     // 新しい1000件を取って昇順に戻す。LIMIT 200 ASC だと古い200件だけで broadcast/scenario 等の
     // 新しい push が欠落していた（Shu で 481件中 281件欠落のバグあり）。一覧側と同様に test 配信は除外。
@@ -458,6 +458,10 @@ chats.get('/api/chats/:id', async (c) => {
       .bind(resolvedFriendId)
       .all();
     messages.results = (messages.results as Record<string, unknown>[]).reverse();
+    const { listHandoffContexts } = await import('../services/faq-handoff-contexts.js');
+    const faqHandoffContexts = friend?.line_account_id
+      ? await listHandoffContexts(c.env.DB, friend.line_account_id, resolvedFriendId)
+      : [];
 
     return c.json({
       success: true,
@@ -469,6 +473,7 @@ chats.get('/api/chats/:id', async (c) => {
         operatorId,
         status,
         notes,
+        faqHandoffContexts,
         lastMessageAt,
         createdAt,
         messages: (messages.results as Record<string, unknown>[]).map((m) => ({

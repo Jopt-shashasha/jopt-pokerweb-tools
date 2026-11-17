@@ -164,6 +164,9 @@ export async function authMiddleware(c: Context<Env>, next: Next): Promise<Respo
       /^\/api\/forms\/[^/]+\/opened$/.test(path) ||
       /^\/api\/forms\/[^/]+\/partial$/.test(path));
   if (isPublicFormAction) return next();
+  // Exact capability-authenticated intake actions only. Each route verifies its
+  // expiring, case/account/friend-scoped token; staff case APIs remain protected.
+  if (method === 'POST' && /^\/api\/faq-intake\/(info|submit|image|withdraw)$/.test(path)) return next();
 
   if (
     path === '/webhook' ||

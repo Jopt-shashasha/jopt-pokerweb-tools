@@ -2,9 +2,25 @@ import type { FaqData } from './faq-data.js';
 import { expandFaq, faqEvents } from './faq-data.js';
 import { faqLineMessage, faqView, type FaqView } from './faq-render.js';
 import { faqNow, getFaqRelease, selectFaqDeployment } from './faq-store.js';
+import { recordHandoffContext } from './faq-handoff-contexts.js';
+import { intakePolicy, intakeKey, startIntake } from './faq-intake.js';
 
 interface Session {id:string;account_id:string;friend_id:string;release_id:string;audience:'test'|'production';node_id:string;event_id:string|null;outcome:string;preserve_unread:number}
-interface Input {accountId:string|null;friendId:string;kind:'text'|'postback';value:string;eventId:string;send:(message:unknown)=>Promise<unknown>}
+interface Input {accountId:string|null;friendId:string;kind:'text'|'postback';value:string;eventId:string;send:(message:unknown)=>Promise<unknown>;intake?:{key?:string;origin:string}}
+// Record the FAQ's canonical classification, not a claim about every button
+// the customer pressed (related links may enter a node from another branch).
+function handoffClassification(data:FaqData,nodeId:string,eventId:string|null):string {
+  const labels:string[]=[],seen=new Set<string>();let current:FaqData['nodes'][string]|undefined=data.nodes[nodeId],eventRelevant=false;
+  while(current&&current.id!=='root'&&!seen.has(current.id)&&seen.size<64){
+    seen.add(current.id);eventRelevant ||= !!current.per_event;
+    labels.unshift(Array.from(current.label.replace(/\s+/g,' ').trim()).slice(0,80).join(''));
+    current=current.parent?data.nodes[current.parent]:undefined;
+  }
+  if(!current||current.id!=='root')return data.nodes[nodeId]?.label||nodeId;
+  const event=eventRelevant&&eventId?data.events[eventId]:undefined;
+  const eventName=typeof event?.name==='string'?Array.from(event.name.replace(/\s+/g,' ').trim()).slice(0,80).join(''):'';
+  return Array.from(labels.join(' → ')+(eventName?` / 大会: ${eventName}`:'')).slice(0,1000).join('');
+}
 async function schemaExists(db:D1Database){return !!await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='faq_deployments'").first();}
 async function updateStatus(db:D1Database,s:Session,status:'unread'|'resolved',note:string){
   const now=faqNow();
@@ -80,7 +96,19 @@ export async function handleFaq(db:D1Database,input:Input):Promise<boolean>{
       // A consultation in human queue remains pending when the same user browses another FAQ.
       const next=s.outcome==='handoff'?'handoff':view.outcome;
       await db.prepare('UPDATE faq_sessions SET node_id=?,event_id=?,outcome=?,updated_at=? WHERE id=?').bind(nodeId,s.event_id,next,faqNow(),s.id).run();
-      if(view.outcome==='handoff')await updateStatus(db,s,'unread',`[FAQ:${s.id}] ${data.nodes[nodeId].label} / ${data.nodes[nodeId].handoff||'H_GENERAL'}`);
+      if(view.outcome==='handoff'){
+        const classification=handoffClassification(data,nodeId,s.event_id);
+        await updateStatus(db,s,'unread',`[FAQ:${s.id}] FAQ分類: ${classification} / ${data.nodes[nodeId].handoff||'H_GENERAL'}`);
+        await recordHandoffContext(db,{sessionId:s.id,accountId:s.account_id,friendId:s.friend_id,nodeId,eventId:s.event_id,classification,createdAt:faqNow()});
+        const policy=intakePolicy(data.handoffs[data.nodes[nodeId].handoff||'H_GENERAL']?.intake);
+        if(policy){
+          if(!input.intake)throw Error('Intake unavailable');
+          const origin=new URL(input.intake.origin);
+          if(origin.protocol!=='https:'||origin.origin!==input.intake.origin)throw Error('Invalid intake origin');
+          const entry=await startIntake(db,{accountId:s.account_id,friendId:s.friend_id},s.id,nodeId,classification,policy,intakeKey(input.intake.key));
+          view.buttons.push({label:policy.buttonLabel,url:`${origin.origin}/faq-intake#${entry.token}`});
+        }
+      }
     }
     const message=faqLineMessage(view,release.id,s.id);
     await input.send(message);

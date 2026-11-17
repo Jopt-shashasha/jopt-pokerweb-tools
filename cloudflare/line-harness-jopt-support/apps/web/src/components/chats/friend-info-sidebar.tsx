@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { api, type MileageHistoryItem, type MileageSummary } from '@/lib/api'
 import { Button } from '@cloudflare/kumo/components/button'
 import { InputArea } from '@cloudflare/kumo/components/input'
+import { FaqHandoffContexts } from './faq-handoff-contexts'
+import { FaqCases } from './faq-cases'
 
 interface FriendDetail {
   id: string
@@ -31,6 +33,7 @@ interface ChatStatusInfo {
 
 interface Props {
   friendId: string | null
+  faqHandoffContexts?: Array<{ classification: string; createdAt: string }>
   /** 親 (ChatDetail) が持っている chat 側の情報 — status / notes */
   chatStatus?: ChatStatusInfo
   /** 担当者名 (ChatDetail で operatorId → name 変換済を渡す想定) */
@@ -66,7 +69,7 @@ function renderValue(value: unknown): string {
   }
 }
 
-export default function FriendInfoSidebar({ friendId, chatStatus, operatorName, notesValue, onNotesChange, onSaveNotes, savingNotes }: Props) {
+export default function FriendInfoSidebar({ friendId, chatStatus, operatorName, notesValue, onNotesChange, onSaveNotes, savingNotes, faqHandoffContexts }: Props) {
   const [friend, setFriend] = useState<FriendDetail | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -259,6 +262,8 @@ export default function FriendInfoSidebar({ friendId, chatStatus, operatorName, 
               </div>
             )}
 
+            {!!faqHandoffContexts?.length && <div className="p-4"><FaqHandoffContexts contexts={faqHandoffContexts} /></div>}
+            <div className="p-4"><FaqCases key={friendId} friendId={friendId} /></div>
             {/* Notes — OAMのノート相当。編集ハンドラが渡された時は編集UI、なければ従来の読み取り表示 */}
             {onSaveNotes ? (
               <div className="p-4">

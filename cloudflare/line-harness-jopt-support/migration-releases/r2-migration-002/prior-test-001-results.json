@@ -1,0 +1,158 @@
+{
+  "release": "r2-test-001",
+  "baseVersion": "d11cc332-914f-4ddb-9f3c-c8b9f30e1aaa",
+  "codeVersion": "9c2480e4-e5ad-4ec8-852a-fe9e28e8492e",
+  "activeVersion": "745f07b7-e847-4fd5-b5d6-dc8567b4a590",
+  "deployedAt": "2026-11-17T04:20:40.418285Z",
+  "worker": "line-harness-jopt-support",
+  "bucket": "line-harness-jopt-support-images",
+  "r2WriteMode": "test",
+  "scope": "Only confirmed ショウ.Sha account; Appwrite mirror required for completed uploads",
+  "modules": [
+    {
+      "name": "assets/index-B_OskYOl.js",
+      "bytes": 4066,
+      "sha256": "50a6ab65943803626e4e5e6db517d11892ccb91ad3d0f0d4a9f1ee98b29d6607",
+      "matchesCanonicalCandidate": true
+    },
+    {
+      "name": "assets/reward-message-40jq5YdS.js",
+      "bytes": 633,
+      "sha256": "813c256928c07ac1e3c4129068f37091020649d352abead0e4d45ed698722944",
+      "matchesCanonicalCandidate": true
+    },
+    {
+      "name": "assets/reward-resolver-DEZddRl8.js",
+      "bytes": 716,
+      "sha256": "f9560a378325cc5c7705dc3c23d8fe2940ba7696bad119cf33bfb3e35d48f6e8",
+      "matchesCanonicalCandidate": true
+    },
+    {
+      "name": "assets/segment-query-4zdp79dX.js",
+      "bytes": 2783,
+      "sha256": "dceeb915174336956371f8245c4f9d27ba31c4e2e9d3dbb5439951fd0007c27b",
+      "matchesCanonicalCandidate": true
+    },
+    {
+      "name": "assets/webinar-followups-bSvm6uIv.js",
+      "bytes": 17659,
+      "sha256": "12b2b626f99ca3b57cd1fa2342d87fe6dced9e8020473f1af07deb093d64fd76",
+      "matchesCanonicalCandidate": true
+    },
+    {
+      "name": "assets/worker-entry-CyzYNkRe.js",
+      "bytes": 2063132,
+      "sha256": "5c7640afa08531e70cdc17cef92beea1e24447afeac879776f92133e4de130aa",
+      "matchesCanonicalCandidate": true
+    },
+    {
+      "name": "index.js",
+      "bytes": 296,
+      "sha256": "ee795909a91c30696ed028ae0378afe7164cf9bebadf20e7c12fcf1b0aed3c9f",
+      "matchesCanonicalCandidate": true
+    },
+    {
+      "name": "assets/index-BJETopf1.js",
+      "bytes": 11970,
+      "sha256": "3fdb30fe06254d7cc7d60019e46f2a419b50cff97bb184bd4ed52a441dbf8ad7",
+      "matchesCanonicalCandidate": true
+    }
+  ],
+  "existingBindingsPreserved": true,
+  "d1RecoveryBookmark": "00000086-000003d0-00005126-026dcda2f45dc2b3c48b851ac445e2b4",
+  "d1RecoveryWindowDays": 7,
+  "d1SchemaModified": false,
+  "webhookModified": false,
+  "staticAssetsPreserved": true,
+  "scheduledTriggers": [
+    "0 */6 * * *",
+    "*/5 * * * *"
+  ],
+  "localTestsPassed": 10,
+  "smoke": [],
+  "actualImageTest": {
+    "status": "PASS",
+    "messageId": "640986243689611929",
+    "objectKey": "line-private/9ff322c4-32e5-4afc-a361-006361c1f503/640986243689611929/2694a159-d7b5-42dd-9c70-64748c5b2084.jpg",
+    "bytes": 589354,
+    "width": 1477,
+    "height": 1108,
+    "sha256": "bf6a5e2eea37b04b4c110b5cf946d1d9abf26c74e805d88b54cf49363e93354b",
+    "r2ReadStatus": 200,
+    "appwriteIndependentRead": {
+      "captured": true,
+      "status": 200,
+      "bytes": 589354,
+      "sha256": "bf6a5e2eea37b04b4c110b5cf946d1d9abf26c74e805d88b54cf49363e93354b",
+      "matchesR2": true
+    },
+    "personalTestConfigRestored": true
+  },
+  "rollbackRehearsal": "Appwrite readback validated; R2_WRITE_MODE=off compatibility and withdrawal only locally tested",
+  "rollbackAction": "Set R2_WRITE_MODE=off, retain compatibility adapter, identity variables and IMAGES_R2 binding",
+  "quotaMonitoringIntegrated": false,
+  "historicalImagesMigrated": false,
+  "readbackRehearsal": "PASS: temporarily disable selected user R2 route, independently read Appwrite mirror, restore selected user, confirm settings",
+  "configurationVersions": [
+    {
+      "id": "9e56b643-6bdb-49f1-934d-15497d7497ad",
+      "createdOn": "2026-11-17T04:18:42.851412Z",
+      "message": "Updated variable: R2_TEST_LINE_USER_ID",
+      "etag": "0e6ce74ba66ea2fc12c962564fc7f5d83fc165b522f6ae2f8d2f5476a31ff8bc",
+      "variables": [
+        {
+          "name": "R2_TEST_ACCOUNT_ID",
+          "text": "9ff322c4-32e5-4afc-a361-006361c1f503",
+          "type": "plain_text"
+        },
+        {
+          "name": "R2_TEST_LINE_USER_ID",
+          "text": "__r2_readback_probe_disabled__",
+          "type": "plain_text"
+        },
+        {
+          "name": "R2_WRITE_MODE",
+          "text": "test",
+          "type": "plain_text"
+        }
+      ]
+    },
+    {
+      "id": "745f07b7-e847-4fd5-b5d6-dc8567b4a590",
+      "createdOn": "2026-11-17T04:20:40.418285Z",
+      "message": "Updated variable: R2_TEST_LINE_USER_ID",
+      "etag": "0e6ce74ba66ea2fc12c962564fc7f5d83fc165b522f6ae2f8d2f5476a31ff8bc",
+      "variables": [
+        {
+          "name": "R2_TEST_ACCOUNT_ID",
+          "text": "9ff322c4-32e5-4afc-a361-006361c1f503",
+          "type": "plain_text"
+        },
+        {
+          "name": "R2_TEST_LINE_USER_ID",
+          "text": "Ub78af99c321e011e37d1cbf7eacb802d",
+          "type": "plain_text"
+        },
+        {
+          "name": "R2_WRITE_MODE",
+          "text": "test",
+          "type": "plain_text"
+        }
+      ]
+    }
+  ],
+  "withdrawalLiveTest": {
+    "status": "PASS",
+    "messageId": "640986243689611929",
+    "r2ObjectAbsent": true,
+    "appwriteObjectAbsent": true,
+    "appwriteCheck": "Authenticated bucket Files: Name equal 2694a159-d7b5-42dd-9c70-64748c5b2084.jpg => No files match your filters",
+    "originalImageUrl": "Image not found",
+    "harnessOriginalImageNoLongerRendered": true,
+    "checkedAt": "2026-11-17T04:38:28.670Z"
+  },
+  "faqFormLiveTest": "NOT_YET_PERFORMED",
+  "initialTestDeploymentId": "fbd6dd47-924a-44ae-b9e8-036cc2dc0da5",
+  "initialTestVersion": "e780c960-e4e0-4d8d-aee6-e315253d2d63",
+  "finalDeploymentIdCaptured": false
+}

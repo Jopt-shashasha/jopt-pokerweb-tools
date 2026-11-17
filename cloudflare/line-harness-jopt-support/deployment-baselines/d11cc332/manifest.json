@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "worker": "line-harness-jopt-support",
+  "accountId": "9b50e8cea0fe5553c90404e7757fe679",
+  "versionId": "d11cc332-914f-4ddb-9f3c-c8b9f30e1aaa",
+  "deploymentId": "6d2313b8-cb99-46d6-a482-30f517703332",
+  "deployedAt": "2026-11-06T18:11:44.337457+09:00",
+  "description": "Support LINE Manager default menu during FAQ release",
+  "exportedAt": "2026-11-17 12:36:25 GMT+9",
+  "exportEndpoint": "production/content/v2?omit=sourcemaps&version=d11cc332-914f-4ddb-9f3c-c8b9f30e1aaa",
+  "sourceBase64Bytes": 2799920,
+  "multipartBytes": 2099940,
+  "multipartSha256": "7a8b81404fde87ec26e7ca3f7f94ffdd277907657d258e2d72b7729cf6c05b7e",
+  "scope": "deployed modules; source maps omitted; static asset contents, database rows, storage objects and secret values are not included",
+  "files": [
+    {
+      "path": "assets/index-B_OskYOl.js",
+      "bytes": 4066,
+      "sha256": "50a6ab65943803626e4e5e6db517d11892ccb91ad3d0f0d4a9f1ee98b29d6607",
+      "contentType": "application/javascript+module"
+    },
+    {
+      "path": "assets/index-BJETopf1.js",
+      "bytes": 11970,
+      "sha256": "3fdb30fe06254d7cc7d60019e46f2a419b50cff97bb184bd4ed52a441dbf8ad7",
+      "contentType": "application/javascript+module"
+    },
+    {
+      "path": "assets/reward-message-40jq5YdS.js",
+      "bytes": 633,
+      "sha256": "813c256928c07ac1e3c4129068f37091020649d352abead0e4d45ed698722944",
+      "contentType": "application/javascript+module"
+    },
+    {
+      "path": "assets/reward-resolver-DEZddRl8.js",
+      "bytes": 716,
+      "sha256": "f9560a378325cc5c7705dc3c23d8fe2940ba7696bad119cf33bfb3e35d48f6e8",
+      "contentType": "application/javascript+module"
+    },
+    {
+      "path": "assets/segment-query-4zdp79dX.js",
+      "bytes": 2783,
+      "sha256": "dceeb915174336956371f8245c4f9d27ba31c4e2e9d3dbb5439951fd0007c27b",
+      "contentType": "application/javascript+module"
+    },
+    {
+      "path": "assets/webinar-followups-bSvm6uIv.js",
+      "bytes": 17659,
+      "sha256": "12b2b626f99ca3b57cd1fa2342d87fe6dced9e8020473f1af07deb093d64fd76",
+      "contentType": "application/javascript+module"
+    },
+    {
+      "path": "assets/worker-entry-CyzYNkRe.js",
+      "bytes": 2059971,
+      "sha256": "90c3c91aad2b904998d14e2243feac06d4068f78f734ff57d65e89cb80541a91",
+      "contentType": "application/javascript+module"
+    },
+    {
+      "path": "index.js",
+      "bytes": 296,
+      "sha256": "ee795909a91c30696ed028ae0378afe7164cf9bebadf20e7c12fcf1b0aed3c9f",
+      "contentType": "application/javascript+module"
+    }
+  ]
+}

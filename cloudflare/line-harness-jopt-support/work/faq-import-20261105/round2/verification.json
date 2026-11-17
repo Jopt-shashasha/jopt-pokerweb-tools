@@ -1,0 +1,16 @@
+{
+  "/health": 200,
+  "/console/faq": 200,
+  "/console/chats": 200,
+  "/faq-intake": 200,
+  "invalidCapabilityRejected": true,
+  "staffAuthenticationRequired": true,
+  "staffCaseApi": "ok",
+  "existingCaseCount": 0,
+  "legacySampleValidation": "0 errors, 0 warnings",
+  "intakeSampleValidation": "0 errors, 0 warnings",
+  "existingBindingsPreserved": 25,
+  "schedulesPreserved": 2,
+  "faqPointersPreserved": true,
+  "caseUiBundle": "verified"
+}

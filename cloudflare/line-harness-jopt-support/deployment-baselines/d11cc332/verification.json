@@ -1,0 +1,17 @@
+{
+  "verifiedAt": "2026-11-17T03:40:01.398Z",
+  "versionId": "d11cc332-914f-4ddb-9f3c-c8b9f30e1aaa",
+  "verifiedModules": 8,
+  "hashes": "PASS",
+  "actualRelativeImports": 54,
+  "relativeImports": "PASS (TypeScript AST; JSDoc excluded)",
+  "javascriptSyntax": "PASS (node --check)",
+  "completePemPrivateKeys": 0,
+  "slackTokenPatterns": 0,
+  "staticAssets": "NOT_EXPORTED",
+  "dataBackup": "NOT_PERFORMED",
+  "rollbackRehearsal": "NOT_PERFORMED",
+  "productionModified": false,
+  "independentVersionPinnedCapture": "PASS: all 8 module hashes match a second response pinned to d11cc332-914f-4ddb-9f3c-c8b9f30e1aaa",
+  "multipartEnvelopeNote": "Different Cloudflare responses use different multipart boundaries; module bytes were compared independently."
+}

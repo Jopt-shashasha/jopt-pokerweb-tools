@@ -18,6 +18,7 @@ import { processDueMeetConsultationReminders } from './services/meet-consultatio
 import { runEventBookingExpirer } from './services/event-booking-expirer.js';
 import { logRetentionDays } from './services/log-retention.js';
 import { resolveObjectStorage } from './services/object-storage.js';
+import { cleanupIntakeImages } from './services/faq-intake.js';
 import { sendEventBookingNotification } from './services/event-booking-notifier.js';
 import { sendBookingNotification } from './services/booking-notifier.js';
 import { DEFAULT_ACCOUNT_SETTINGS } from './services/booking-types.js';
@@ -67,6 +68,10 @@ export async function scheduled(
   env: Env['Bindings'],
   ctx: ExecutionContext,
 ): Promise<void> {
+  if(env.FAQ_CONTACT_IDS_ENCRYPTION_KEY){
+    try { await cleanupIntakeImages(env.DB,resolveObjectStorage(env)); }
+    catch { console.error('[faq-intake] image cleanup unavailable; retry on next tick'); }
+  }
   // Get all active accounts from DB
   const dbAccounts = await getLineAccounts(env.DB);
 

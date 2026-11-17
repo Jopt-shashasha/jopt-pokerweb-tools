@@ -1,3 +1,5 @@
+import { intakePolicy } from './faq-intake.js';
+
 export interface FaqNode {
   id: string; parent?: string | null; label: string; type: 'menu'|'answer'|'check'|'redirect'|'handoff';
   body?: string; order?: number; channel?: string | null; handoff?: string | null;
@@ -83,7 +85,10 @@ export function validateFaq(d:FaqData,today=new Intl.DateTimeFormat('sv-SE',{tim
     if(ch.url){try{const u=new URL(ch.url);if(u.protocol!=='https:')throw 0;}catch{errors.push(`${id}: HTTPSのURLを指定してください`);}}
     if(ch.status!=='確認済')warnings.push(`${id}: 誘導先が要確認です`);
   }
-  for(const [id,h] of Object.entries(d.handoffs))if(h.fields!==undefined&&(!Array.isArray(h.fields)||h.fields.some(f=>typeof f!=='string')))errors.push(`${id}: 聞き取り項目が不正です`);
+  for(const [id,h] of Object.entries(d.handoffs)){
+    if(h.fields!==undefined&&(!Array.isArray(h.fields)||h.fields.some(f=>typeof f!=='string')))errors.push(`${id}: 聞き取り項目が不正です`);
+    try { intakePolicy(h.intake); } catch(e) { errors.push(`${id}: ${e instanceof Error?e.message:'Invalid intake'}`); }
+  }
   for(const [id,v] of Object.entries(d.vars))if(v.valid_until&&v.valid_until<today)warnings.push(`${id}: 有効期限切れ (${v.valid_until})`);
   for(const id of ['msg_root','msg_followup','msg_handoff_in','msg_handoff_out','msg_resolved'])if(typeof d.messages[id]?.text!=='string'||!d.messages[id].text?.trim())warnings.push(`${id}: 共通文面がありません`);
   return {errors:[...new Set(errors)],warnings:[...new Set(warnings)],counts,productionReady:errors.length===0&&warnings.length===0};

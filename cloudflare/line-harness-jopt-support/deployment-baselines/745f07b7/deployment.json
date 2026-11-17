@@ -1,0 +1,17 @@
+{
+  "id": "d9acbf1e-e4a9-4709-9a47-2bdfa1b8b776",
+  "source": "dash",
+  "strategy": "percentage",
+  "author_email": "xiao.h@japanopenpoker.com",
+  "annotations": {
+    "workers/message": "Deployed version 745f07b7",
+    "workers/triggered_by": "deployment"
+  },
+  "versions": [
+    {
+      "version_id": "745f07b7-e847-4fd5-b5d6-dc8567b4a590",
+      "percentage": 100
+    }
+  ],
+  "created_on": "2026-11-17T04:20:40.891927Z"
+}

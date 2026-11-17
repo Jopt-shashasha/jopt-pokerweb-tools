@@ -63,6 +63,7 @@ import { accountSettings } from './routes/account-settings.js';
 import { setup } from './routes/setup.js';
 import { autoReplies } from './routes/auto-replies.js';
 import { faq } from './routes/faq.js';
+import { faqIntake } from './routes/faq-intake.js';
 import { faqTestMembers } from './routes/faq-test-members.js';
 import { adminAuth } from './routes/admin-auth.js';
 import { resolveCorsOrigin } from './middleware/admin-auth-config.js';
@@ -94,6 +95,7 @@ import {
 export type Env = {
   Bindings: StorageBindings & {
     DB: D1Database;
+    FAQ_CONTACT_IDS_ENCRYPTION_KEY?: string;
     IMAGES: ObjectStorage;
     ASSETS: Fetcher;
     LINE_CHANNEL_SECRET: string;
@@ -258,6 +260,7 @@ app.route('/', images);
 app.route('/', setup);
 app.route('/', autoReplies);
 app.route('/', faq);
+app.route('/', faqIntake);
 app.route('/', faqTestMembers);
 app.route('/', adminAuth);
 app.route('/', trafficPools);

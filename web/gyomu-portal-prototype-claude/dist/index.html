@@ -1,0 +1,333 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>業務ポータル</title><style>
+:root{
+  --bg:#ffffff;
+  --sidebar:#fafafa;
+  --border:#e8e8e8;
+  --ink:#181818;
+  --ink-soft:#6b6b6b;
+  --ink-faint:#a0a0a0;
+  --accent:#181818;
+  --accent-contrast:#ffffff;
+  --highlight:#606060;
+  --highlight-soft:#f0f0f0;
+  --warn:#7e7e7e;
+  --row-hover:#f7f7f7;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Sans","Yu Gothic UI",system-ui,sans-serif;font-size:13.5px;line-height:1.6;}
+button{font-family:inherit;cursor:pointer;}
+
+.prototype-flag{background:#f7f7f7;color:#5e5e5e;font-size:11.5px;padding:5px 16px;text-align:center;border-bottom:1px solid #e1e1e1;}
+
+.shell{display:flex;min-height:100vh;}
+
+.sidebar{width:228px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:12px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;padding:6px 8px 14px;}
+.brand-mark{width:22px;height:22px;border-radius:6px;background:var(--accent);color:var(--accent-contrast);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
+
+.sidebar-btn{display:flex;align-items:center;gap:8px;width:100%;border:1px solid var(--border);background:var(--bg);border-radius:7px;padding:7px 10px;font-size:13px;font-weight:600;margin-bottom:8px;}
+.sidebar-btn:hover{background:var(--row-hover);}
+.sidebar-btn-accent{background:var(--ink);color:#ffffff;border-color:var(--ink);}
+.sidebar-btn-accent:hover{opacity:.9;background:var(--ink);}
+.sidebar-btns{margin-bottom:10px;}
+
+.nav-group{margin-bottom:10px;}
+.nav-link{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:none;background:none;border-radius:6px;padding:7px 8px;font-size:13px;color:var(--ink-soft);text-align:left;}
+.nav-link:hover{background:var(--row-hover);color:var(--ink);}
+.nav-link.active{background:var(--ink);color:#ffffff;}
+.nav-link .count{font-size:11px;color:inherit;opacity:.6;}
+.nav-parent .chev{transition:transform .15s;color:var(--ink-faint);}
+.chev.open{transform:rotate(90deg);}
+.nav-sub{padding-left:20px;font-size:12.5px;}
+
+.sidebar-foot{margin-top:auto;border-top:1px solid var(--border);padding-top:10px;display:flex;align-items:center;gap:8px;padding-left:8px;}
+.avatar{width:24px;height:24px;border-radius:50%;background:var(--bg);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;border:1px solid var(--border);flex-shrink:0;}
+.sidebar-foot .who{font-size:12.5px;font-weight:600;}
+.sidebar-foot .mail{font-size:11px;color:var(--ink-faint);}
+
+.main{flex:1;min-width:0;}
+.topbar{display:flex;align-items:center;gap:14px;padding:14px 28px;border-bottom:1px solid var(--border);}
+#menuBtn{display:none;border:1px solid var(--border);background:var(--bg);border-radius:7px;padding:4px 9px;font-size:15px;}
+.crumbs{display:flex;align-items:center;gap:8px;font-size:13px;min-width:0;flex-wrap:wrap;}
+.crumb{border:none;background:none;color:var(--ink-faint);padding:0;font-size:13px;}
+.crumb:hover{color:var(--ink);text-decoration:underline;}
+.crumb-cur{font-weight:600;color:var(--ink);}
+.crumb-sep{color:var(--ink-faint);}
+.topbar .search{margin-left:auto;position:relative;width:240px;flex-shrink:0;}
+.topbar .search input{width:100%;padding:6px 10px 6px 26px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--sidebar);}
+.topbar .search .ic{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--ink-faint);font-size:12px;}
+
+.content{padding:22px 28px 60px;max-width:1000px;}
+
+.btn{border:1px solid var(--border);background:var(--bg);border-radius:7px;padding:7px 12px;font-size:13px;color:var(--ink);}
+.btn:hover{background:var(--row-hover);}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#ffffff;}
+.btn.primary:hover{opacity:.88;background:var(--accent);}
+.btn:disabled{opacity:.55;cursor:default;}
+
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+.stat-card{border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+.stat-card .label{font-size:11.5px;color:var(--ink-soft);margin-bottom:8px;}
+.stat-card .value{font-size:22px;font-weight:700;}
+
+.tag-line{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--ink-faint);margin-bottom:22px;}
+h2.section-title{font-size:13.5px;margin:0 0 12px;color:var(--ink-soft);font-weight:600;}
+h2.section-title .faint{font-weight:400;color:var(--ink-faint);font-size:11.5px;margin-left:6px;}
+
+.home-row{display:grid;grid-template-columns:1.6fr 1fr;gap:28px;align-items:start;}
+.pick-list{display:flex;flex-direction:column;gap:10px;margin-bottom:30px;}
+.pick-item{border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;display:flex;flex-direction:column;}
+.pick-item:hover{border-color:var(--ink);}
+.pick-item .dept-tag{display:inline-block;align-self:flex-start;font-size:10.5px;letter-spacing:.03em;color:var(--highlight);background:var(--highlight-soft);font-weight:700;padding:3px 9px;border-radius:999px;margin-bottom:10px;}
+.pick-item .benefit{font-size:13.5px;font-weight:600;line-height:1.55;margin-bottom:12px;flex:1;}
+.pick-item .source-title{font-size:12px;color:var(--ink-faint);padding-top:10px;border-top:1px solid var(--border);}
+.pick-item:hover .source-title{color:var(--ink);}
+
+.news-item{padding:12px 0;border-top:1px solid var(--border);cursor:pointer;}
+.news-item:first-of-type{border-top:none;padding-top:0;}
+.news-item .headline{font-size:13.5px;font-weight:600;}
+.news-item:hover .headline{text-decoration:underline;}
+.news-item .date{font-size:11px;color:var(--ink-faint);margin-top:3px;}
+.news-note{font-size:11px;color:var(--ink-faint);margin-top:12px;}
+
+.chip{border:1px solid var(--border);background:var(--bg);border-radius:999px;padding:4px 11px;font-size:12px;color:var(--ink-soft);}
+.chip:hover{border-color:var(--ink);color:var(--ink);}
+.chip.active{background:var(--ink);border-color:var(--ink);color:#ffffff;}
+.active-filters{display:flex;gap:8px;flex-wrap:wrap;margin:-8px 0 14px;}
+.count{font-size:12px;color:var(--ink-faint);margin-bottom:6px;}
+
+table.data-table{width:100%;max-width:880px;border-collapse:collapse;font-size:13px;table-layout:fixed;}
+table.data-table col.c-owner{width:84px;}
+table.data-table col.c-date{width:74px;}
+table.data-table col.c-action{width:104px;}
+table.data-table thead th{text-align:left;font-size:11.5px;color:var(--ink-faint);font-weight:600;padding:0 10px 8px 0;border-bottom:1px solid var(--border);}
+table.data-table tbody td{padding:11px 10px 11px 0;border-bottom:1px solid var(--border);vertical-align:middle;}
+table.data-table tbody tr:hover{background:var(--row-hover);}
+table.data-table .r-name{display:flex;align-items:center;gap:10px;cursor:pointer;}
+table.data-table .r-ic{width:30px;height:30px;border-radius:7px;background:var(--sidebar);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+table.data-table .r-title{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+table.data-table .r-tags{color:var(--ink-faint);font-size:11.5px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+table.data-table .r-actions{white-space:nowrap;}
+.icon-btn{border:none;background:none;color:var(--ink-faint);font-size:16px;padding:2px 5px;border-radius:6px;}
+.icon-btn:hover{background:var(--row-hover);color:var(--ink);}
+.icon-btn.active{color:var(--warn);}
+.empty{color:var(--ink-faint);font-size:12.5px;padding:18px 0;}
+
+.pv-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:flex-start;}
+.pv-title{font-size:18px;margin:0;}
+.pv-sub{color:var(--ink-faint);font-size:12px;margin-top:2px;}
+.pv-actions{display:flex;gap:8px;}
+.pv-note{background:#f7f7f7;color:#5e5e5e;border:1px solid #e1e1e1;border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:16px;}
+table.sheet{width:100%;border-collapse:collapse;font-size:13px;border:1px solid var(--border);}
+table.sheet th{background:var(--sidebar);text-align:left;font-size:11.5px;color:var(--ink-soft);padding:8px 12px;border-bottom:1px solid var(--border);}
+table.sheet td{padding:9px 12px;border-bottom:1px solid var(--border);}
+table.sheet td.num,table.sheet th.num{text-align:right;}
+table.sheet tfoot td{font-weight:700;background:var(--sidebar);}
+.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.k-col{background:var(--sidebar);border:1px solid var(--border);border-radius:10px;padding:12px;}
+.k-col h4{margin:0 0 10px;font-size:12px;color:var(--ink-soft);}
+.k-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;font-size:12.5px;}
+
+.modal-backdrop{position:fixed;inset:0;background:rgba(16,16,16,.4);display:none;align-items:flex-start;justify-content:center;padding:6vh 16px;z-index:50;overflow:auto;}
+.modal-backdrop.show{display:flex;}
+.modal{background:var(--bg);border-radius:14px;max-width:480px;width:100%;padding:24px 26px;box-shadow:0 24px 60px rgba(0,0,0,.2);}
+.modal.wide{max-width:540px;}
+.modal h3{margin:0 0 4px;font-size:16px;}
+.modal .close{float:right;border:none;background:none;font-size:16px;color:var(--ink-faint);}
+.modal .lead{color:var(--ink-faint);font-size:12px;margin:0 0 14px;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:4px;}
+.field input,.field select,.field textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.inline-row{display:flex;gap:8px;}
+.inline-row .btn{white-space:nowrap;}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap;}
+.detail-row{margin-bottom:10px;font-size:13px;}
+.detail-row .k{color:var(--ink-faint);font-size:11px;margin-bottom:2px;}
+details.guide{border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:10px;}
+details.guide summary{cursor:pointer;font-size:12.5px;color:var(--ink-soft);}
+details.guide ul{margin:8px 0 2px;padding-left:18px;font-size:12.5px;}
+.success-box{background:var(--highlight-soft);color:var(--highlight);border-radius:8px;padding:12px;font-size:13px;margin-top:4px;}
+.flow-box{background:var(--sidebar);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--ink-soft);margin-bottom:14px;}
+.flow-box b{color:var(--ink);}
+
+.toast-wrap{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.toast{background:var(--ink);color:#ffffff;padding:9px 16px;border-radius:999px;font-size:12.5px;opacity:0;transform:translateY(6px);transition:all .2s;}
+.toast.show{opacity:1;transform:translateY(0);}
+
+.codex-panel{display:flex;flex-direction:column;gap:10px;max-height:360px;overflow:auto;margin-bottom:12px;}
+.bubble{border-radius:10px;padding:10px 12px;font-size:13px;max-width:92%;}
+.bubble.from-codex{background:var(--sidebar);align-self:flex-start;}
+.bubble.from-portal{background:var(--highlight-soft);color:var(--highlight);align-self:flex-end;}
+.bubble .tag{font-size:10px;text-transform:uppercase;letter-spacing:.03em;opacity:.7;display:block;margin-bottom:3px;}
+
+@media (max-width:760px){
+  .sidebar{position:fixed;inset:0 auto 0 0;z-index:40;transform:translateX(-100%);transition:transform .2s;box-shadow:0 0 40px rgba(0,0,0,.15);}
+  .sidebar.open{transform:translateX(0);}
+  #menuBtn{display:inline-block;}
+  .topbar{padding:12px 16px;flex-wrap:wrap;}
+  .topbar .search{width:100%;margin-left:0;}
+  .content{padding:18px 16px 60px;}
+  .stat-row,.home-row,.kanban{grid-template-columns:1fr;}
+  .field-row{grid-template-columns:1fr;}
+}
+
+a{color:inherit;text-decoration:none}button,input,select,textarea{font:inherit}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #606060;outline-offset:3px}.nav-link{box-sizing:border-box}.account-button{background:none;border:0;border-top:1px solid var(--border);width:100%;text-align:left;color:inherit;cursor:pointer}.brand a{display:flex;align-items:center;gap:8px}.topbar .search{margin-top:0;margin-bottom:0}.topbar .search input{padding-right:48px}.search-submit{position:absolute;right:7px;top:5px;border:0;background:none;color:var(--ink-soft);font-size:11px;padding:2px}.nav-parent-row{display:flex;align-items:center;gap:3px}.nav-parent-row>a{flex:1}.nav-expand{border:0;background:none;color:var(--ink-faint);padding:5px 8px}.crumbs a:hover{text-decoration:underline}.crumbs [aria-current]{color:var(--ink);font-weight:600}.page-heading{margin-bottom:25px}.page-heading h1{font-size:24px;font-weight:650;margin:0 0 7px;line-height:1.6}.page-heading p{font-size:12.5px;color:var(--ink-soft);line-height:1.9;margin:0}.home-heading{margin-bottom:24px}.home-heading h1{font-size:21px;margin:0 0 7px}.home-heading p{color:var(--ink-soft);font-size:12.5px;margin:0}.section-header{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:12px}.section-header h2{font-size:13.5px;font-weight:600;margin:0;color:var(--ink-soft)}.section-header a{font-size:11px;color:var(--ink-faint)}.pick-item h3{font-size:13.5px;margin:0 0 8px;font-weight:600;line-height:1.65}.pick-item .benefit{font-size:12px;font-weight:400;color:var(--ink-soft)}.news-item{display:block}.directory{max-width:800px;border-top:1px solid var(--border)}.directory>a{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:18px 0;border-bottom:1px solid var(--border)}.directory>a:hover strong{text-decoration:underline}.directory strong{font-size:13px;font-weight:600}.directory small{display:block;color:var(--ink-faint);font-size:11px;margin-top:5px}.business-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:20px 0 30px}.business-card{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:10px;padding:20px}.business-card:hover{border-color:#aaaaaa}.business-card small{font-size:10.5px;color:var(--ink-faint)}.business-card h2{font-size:16px;margin:12px 0 9px;line-height:1.6}.business-card p{color:var(--ink-soft);font-size:12.5px;line-height:1.9;margin:0 0 20px}.business-card .card-foot{font-size:11px;color:var(--highlight);margin-top:auto;display:flex;justify-content:space-between}.business-note{font-size:11px;color:var(--ink-faint);margin:20px 0}.r-purpose{font-size:11.5px;color:var(--ink-soft);margin-top:5px;line-height:1.7}.r-name{display:flex!important}.r-title{white-space:normal!important;line-height:1.7}.r-ic{font-size:10px!important}.r-actions a{font-size:12px;color:var(--ink-soft)}.r-actions{white-space:normal!important}.r-actions button{font-size:15px}.list-toolbar{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin:20px 0}.list-toolbar label{font-size:11px;color:var(--ink-soft)}.list-toolbar select{display:block;padding:7px 10px;border:1px solid var(--border);border-radius:7px;margin-top:6px;background:white;font-size:12px;min-width:130px}.list-toolbar .count{margin:0 0 7px auto}.detail-panel{border:1px solid var(--border);border-radius:10px;padding:24px;max-width:780px}.detail-meta{display:grid;grid-template-columns:105px minmax(0,1fr);gap:14px;font-size:12.5px;margin:0 0 25px}.detail-meta dt{color:var(--ink-faint)}.detail-meta dd{margin:0;overflow-wrap:anywhere}.detail-meta a{color:var(--highlight)}.detail-actions{display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:20px}.sample-note{font-size:11px;line-height:1.8;color:var(--ink-faint);margin:20px 0 0}.news-article{max-width:720px}.news-article>p{font-size:13.5px;line-height:2.1;margin:24px 0}.article-meta{font-size:11px;color:var(--ink-faint)}.notice{font-size:12px;padding:12px 14px;border-radius:8px;background:var(--sidebar);border:1px solid var(--border);color:var(--ink-soft);line-height:1.9}.news-list .news-item{padding:22px 0}.news-list .headline{margin-bottom:8px}.news-list p{font-size:12px;color:var(--ink-soft)}dialog.modal{border:1px solid var(--border);padding:24px;border-radius:12px;background:white;color:var(--ink);width:580px;max-width:calc(100% - 28px);max-height:90dvh;overflow:auto;box-sizing:border-box;box-shadow:0 15px 80px #00000022}dialog.modal::backdrop{background:#00000055}.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}.modal-head h2{font-size:19px;margin:0 0 9px}.modal-head button{border:0;background:none;font-size:23px;color:var(--ink-faint);padding:0 3px}.register-tabs{display:flex;gap:18px;border-bottom:1px solid var(--border);margin:20px 0}.register-tabs button{border:0;background:none;color:var(--ink-soft);padding:9px 0;border-bottom:2px solid transparent;font-size:12px}.register-tabs button.active{border-bottom-color:var(--ink);color:var(--ink);font-weight:600}.field{margin:14px 0}.field label{display:block;font-size:12px;margin-bottom:6px}.field small{font-size:10.5px;color:var(--ink-faint);display:block;margin-top:6px}.field input,.field select,.field textarea{box-sizing:border-box;background:white}.field textarea{resize:vertical}.close-sidebar{display:none}.sidebar-overlay{display:none}.content a:hover{color:var(--highlight)}[hidden]{display:none!important}.page-footnote{font-size:10px;color:var(--ink-faint);margin-top:35px;padding-top:16px;border-top:1px solid var(--border)}
+@media(max-width:760px){.business-grid{grid-template-columns:1fr}.page-heading h1{font-size:21px}.detail-panel{padding:18px}.detail-meta{grid-template-columns:75px minmax(0,1fr);font-size:12px;gap:12px}.list-toolbar{gap:9px}.list-toolbar label{flex:1;min-width:110px}.list-toolbar select{min-width:0;width:100%;font-size:11px}.list-toolbar .count{width:100%;text-align:right}.data-table col.c-owner,.data-table col.c-date{width:0!important}.data-table th:nth-child(2),.data-table td:nth-child(2),.data-table th:nth-child(3),.data-table td:nth-child(3){display:none}.data-table col.c-action{width:78px!important}.r-purpose{font-size:11px}.r-title{font-size:12px}.r-ic{width:26px!important;height:28px!important}.sidebar-overlay.show{display:block;position:fixed;inset:0;background:#00000055;z-index:39}.close-sidebar{display:block;margin-left:auto;border:0;background:none;font-size:19px;color:var(--ink-soft)}.sidebar{height:100dvh}.home-heading h1{font-size:19px}.home-row{gap:10px}.pick-list{margin-bottom:18px}.detail-actions .btn{font-size:12px}}
+
+/* Visual refinement: preserve layout and navigation, improve reading hierarchy. */
+:root{--sidebar:#f8f8f8;--border:#e3e3e3;--ink:#262626;--ink-soft:#5e5e5e;--ink-faint:#787878;--highlight:#555555;--highlight-soft:#f1f1f1;--row-hover:#f7f7f7}
+body{font-size:14px;line-height:1.75;-webkit-font-smoothing:antialiased}.prototype-flag{font-size:10.5px;padding:4px 16px;background:#f7f7f7;color:#656565;border-bottom-color:#e4e4e4}.brand{font-size:15px;padding-top:10px;padding-bottom:20px}.brand-mark{width:25px;height:25px;font-size:12px}.sidebar{padding:12px}.sidebar-btn{font-size:12.5px;padding:9px 11px;min-height:38px;font-weight:550;margin-bottom:8px}.sidebar-btn-accent{background:#ffffff;color:#414141;border-color:#dddddd}.sidebar-btn-accent:hover{background:#f1f1f1;color:#444444;opacity:1}.sidebar-btns{margin-bottom:19px}#openRegister{background:#373737;border-color:#373737;color:#ffffff;font-weight:650}#openRegister:hover{background:#4a4a4a}.nav-link{font-size:13px;padding:9px 11px;min-height:38px;color:#5e5e5e}.nav-link.active{background:#ededed;color:#474747;font-weight:650;box-shadow:inset 3px 0 #6b6b6b}.nav-link:hover{background:#f0f0f0}.nav-link.active:hover{background:#e6e6e6}.nav-sub{font-size:12px;padding-left:24px}.nav-group{margin-bottom:15px}.nav-parent-row{margin-top:5px}.nav-parent-row>a{font-size:12px;font-weight:600;color:#5d5d5d}.sidebar-foot{padding-top:14px;padding-bottom:6px}.sidebar-foot .mail{font-size:10.5px}.topbar{padding:15px 30px;min-height:68px;background:#ffffff}.crumbs{font-size:12px}.crumb{font-size:12px}.crumbs [aria-current]{color:#323232}.topbar .search{width:300px}.topbar .search input{padding-top:9px;padding-bottom:9px;font-size:12.5px;background:#f9f9f9;border-color:#e1e1e1}.topbar .search input:focus{background:#ffffff;border-color:#8e8e8e;outline:2px solid #e8e8e8;outline-offset:1px}.search-submit{top:8px;right:9px;color:#5b5b5b}.content{padding:30px 30px 55px;max-width:1080px}.home-heading{margin-bottom:25px}.home-heading h1{font-size:25px;font-weight:650;letter-spacing:.01em;margin-bottom:8px}.home-heading p{font-size:13px;color:#636363}.tag-line{margin-bottom:28px;font-size:11.5px;color:#6f6f6f;gap:8px}.chip{font-size:11.5px;background:#ffffff;border-color:#e0e0e0;color:#636363;padding:4px 12px}.chip:hover{background:#f3f3f3;border-color:#a6a6a6}.home-row{gap:32px;grid-template-columns:1.55fr 1fr}.section-header{margin-bottom:15px;min-height:24px}.section-header h2{font-size:14px;color:#393939;font-weight:650}.section-header a{font-size:11.5px;color:#656565}.pick-list{gap:12px;margin-bottom:18px}.pick-item{padding:19px;border-color:#e2e2e2;border-radius:9px;background:#ffffff}.pick-item:hover{border-color:#9d9d9d;background:#fdfdfd}.pick-item .dept-tag{font-size:10.5px;letter-spacing:0;background:#f1f1f1;color:#585858;padding:3px 9px;margin-bottom:11px}.pick-item .benefit{font-size:14px;font-weight:550;color:#383838;line-height:1.85;margin-bottom:15px}.pick-item .source-title{font-size:12px;color:#5f5f5f;border-top-color:#ebebeb;padding-top:12px;font-weight:550}.news-item{padding:15px 0;border-top-color:#e5e5e5}.news-item .headline{font-size:13.5px;line-height:1.85;font-weight:600;color:#3d3d3d}.news-item .date{font-size:11px;color:#757575;margin-top:7px}.news-note,.sample-note{font-size:10.5px;color:#7e7e7e;line-height:1.9}.page-heading h1{font-size:25px;color:#343434;font-weight:650}.page-heading p{font-size:13px;color:#636363}.business-card{padding:22px;border-color:#e2e2e2;border-radius:9px}.business-card:hover{border-color:#a0a0a0;background:#fdfdfd}.business-card h2{font-size:17px;font-weight:650;color:#393939}.business-card p{font-size:13px;line-height:1.9;color:#5f5f5f}.business-card small{font-size:11px;color:#787878}.business-card .card-foot{font-size:11.5px;font-weight:550}.directory>a{padding:20px 4px}.directory strong{font-size:14px}.directory small{font-size:12px;color:#6f6f6f;margin-top:6px}.directory>a:hover{background:#f9f9f9}.list-toolbar{padding:0 0 17px;border-bottom:1px solid #e8e8e8;margin-bottom:12px}.list-toolbar label{font-size:11.5px;color:#646464}.list-toolbar .count{font-size:12px;color:#5e5e5e}.data-table{max-width:none!important}.data-table thead th{font-size:11.5px!important;padding:11px 10px!important;background:#f6f6f6;color:#686868!important;font-weight:600!important;border-bottom-color:#e1e1e1!important}.data-table tbody td{padding:16px 10px!important;line-height:1.75;border-bottom-color:#e9e9e9!important}.data-table .r-title{font-size:14px;font-weight:600;line-height:1.8}.data-table .r-purpose{font-size:12px;color:#666666;line-height:1.8;margin-top:5px}.data-table .r-tags{font-size:10.5px;color:#7d7d7d;margin-top:5px}.data-table .r-ic{width:34px;height:34px;color:#606060;background:#f1f1f1;border-color:#e6e6e6}.data-table .r-name{gap:12px}.data-table td:nth-child(2),.data-table td:nth-child(3){font-size:11.5px;color:#707070}.r-actions a{font-size:11.5px;color:#565656}.icon-btn{color:#797979}.detail-panel{padding:26px;border-color:#e2e2e2}.detail-meta{font-size:13px;gap:17px}.detail-meta dt{font-size:12px;color:#767676}.detail-meta dd{color:#3d3d3d;line-height:1.9}.detail-meta .chip{font-size:11px}.btn{font-size:12.5px;border-color:#dcdcdc;padding:8px 14px}.btn.primary{background:#474747;border-color:#474747}.btn.primary:hover{background:#5b5b5b;opacity:1}.notice{font-size:12px;background:#f7f7f7;border-color:#e5e5e5;color:#666666}.page-footnote{color:#818181;font-size:10px;margin-top:32px}.detail-actions{gap:9px}.field label{font-size:12px;font-weight:550;color:#4c4c4c}.field input,.field select,.field textarea{font-size:13px;border-color:#dddddd;padding:10px 11px}.news-article>p{font-size:14px;line-height:2.1;color:#424242}.article-meta{font-size:11.5px;color:#787878}.bubble{font-size:13px;line-height:1.85}
+@media(max-width:760px){.content{padding:23px 18px 40px}.topbar{padding:12px 18px;gap:11px}.topbar .search{width:100%}.home-row{grid-template-columns:1fr;gap:20px}.home-heading h1,.page-heading h1{font-size:23px}.home-heading p,.page-heading p{font-size:12.5px}.pick-item{padding:17px}.pick-item .benefit{font-size:13px;line-height:1.9}.section-header h2{font-size:13px}.news-item .headline{font-size:13px}.data-table tbody td{padding:15px 7px!important}.data-table thead th{padding:10px 7px!important}.data-table .r-title{font-size:12.5px}.data-table .r-purpose{font-size:11.5px}.data-table .r-tags{font-size:10px}.data-table .r-name{gap:8px}.business-card p{font-size:12.5px}.detail-panel{padding:20px}.detail-meta{font-size:12px}.detail-meta dt{font-size:11.5px}.tag-line{margin-bottom:25px}.sidebar .nav-link{font-size:13px}.sidebar .nav-sub{font-size:12px}}
+
+
+/* Monochrome navigation hierarchy. */
+:root{--ink:#222;--ink-soft:#555;--ink-faint:#737373;--accent:#222;--highlight:#333;--highlight-soft:#f0f0f0;--warn:#444;--sidebar:#f7f7f7;--border:#dedede;--row-hover:#f3f3f3}
+.sidebar>.nav-group{border-bottom:1px solid #dedede;padding-bottom:15px;margin-bottom:20px}.sidebar>.nav-group>.nav-link{font-size:13px;color:#4c4c4c;margin-bottom:3px}.sidebar .nav-link.active{background:#e7e7e7;color:#161616;box-shadow:inset 3px 0 #222;font-weight:650}.sidebar .nav-link.active:hover{background:#dedede}.sidebar .nav-link:hover{color:#161616;background:#ededed}#subNav .nav-group{margin-bottom:20px}#subNav .nav-parent-row{background:#ececec;border:1px solid #e2e2e2;border-radius:6px;min-height:37px;margin:0 0 8px;padding-right:3px}#subNav .nav-parent-row>a{font-size:12px;font-weight:700;color:#252525;padding:8px 10px;min-height:0}#subNav .nav-parent-row>a:hover{background:transparent}.nav-expand{color:#444;font-weight:650}.sidebar #subNav .nav-sub{width:calc(100% - 13px);margin-left:13px;border-left:1px solid #d5d5d5;border-radius:0 5px 5px 0;padding:8px 10px 8px 17px;min-height:36px;font-size:12px;font-weight:400;color:#5b5b5b}.sidebar #subNav .nav-sub.active{border-left-color:#222;background:#e5e5e5;color:#111;font-weight:650;box-shadow:inset 2px 0 #222}.sidebar #subNav .nav-sub:hover{background:#eee;color:#222}.sidebar-btn-accent{background:white;color:#333;border-color:#d8d8d8}#openRegister,.btn.primary{background:#222;border-color:#222;color:white}#openRegister:hover,.btn.primary:hover{background:#3a3a3a}.pick-item .dept-tag{background:#f0f0f0;color:#444}.pick-item .source-title,.r-actions a,.business-card .card-foot,.detail-meta a{color:#333}.sidebar-foot{background:#f7f7f7}.content a:hover{color:#111}.topbar .search input:focus{border-color:#777;outline-color:#e5e5e5}.nav-link:focus-visible,a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline-color:#555}
+
+/* Sidebar reference: outlined icons, quiet group labels, solid monochrome selection. */
+.sidebar{padding:14px 12px}.sidebar>.nav-group{padding-bottom:20px;margin-bottom:17px;border-bottom:1px solid #e1e1e1}.sidebar .nav-link{display:flex;justify-content:flex-start;align-items:center;gap:11px;min-height:43px;border-radius:8px;padding:10px 12px;font-size:13px;color:#555;font-weight:550;margin-bottom:4px}.nav-icon{width:18px;height:18px;flex:0 0 18px;display:block}.nav-text{display:flex;align-items:center;justify-content:space-between;gap:6px;flex:1;min-width:0}.sidebar .nav-link.active,.sidebar .nav-link.active:hover{background:#242424;color:#fff;box-shadow:none}.sidebar .nav-link:hover{background:#eaeaea;color:#222}.sidebar .nav-link .count{font-size:10px;margin:0;opacity:.7}#subNav .nav-parent-row{border:0;background:transparent;margin:0 0 5px;padding-right:2px;border-radius:0}#subNav .nav-parent-row>a{color:#777;font-size:11px;font-weight:650;letter-spacing:.015em;padding:9px 11px;min-height:34px}#subNav .nav-parent-row>a .nav-icon{width:15px;height:15px;flex-basis:15px}#subNav .nav-parent-row>a:hover{background:#eee}#subNav .nav-group{margin-bottom:21px}.sidebar #subNav .nav-sub{border:0;width:100%;margin:0 0 3px;padding:9px 11px 9px 22px;gap:10px;min-height:39px;border-radius:7px;font-size:12px;color:#5e5e5e;font-weight:450}.sidebar #subNav .nav-sub .nav-icon{width:16px;height:16px;flex-basis:16px;color:#888}.sidebar #subNav .nav-sub.active,.sidebar #subNav .nav-sub.active:hover{background:#242424;color:white;border:0;box-shadow:none;font-weight:600}.sidebar #subNav .nav-sub.active .nav-icon{color:white}.sidebar #subNav .nav-sub:hover{background:#eaeaea;color:#222}.nav-expand{color:#888;padding:7px;font-size:13px}.sidebar-foot{padding-top:15px}.sidebar-btns{margin-bottom:22px}
+
+</style></head><body><div class="prototype-flag">案B・画面確認用｜資料・業務・記事はサンプルです。実際の認証・保存・連携は行いません。</div><div class="sidebar-overlay" id="sidebarOverlay"></div><div class="shell">  <aside class="sidebar" id="sidebar">
+    <div class="brand"><a href="#/"><span class="brand-mark">J</span>業務ポータル</a><button class="close-sidebar" id="closeSidebar" aria-label="メニューを閉じる">×</button></div>
+
+    <div class="sidebar-btns">
+      <button class="sidebar-btn" id="openRegister">＋ 登録する</button>
+      <button class="sidebar-btn sidebar-btn-accent" id="openCodexNav">⌘ Codexと連携</button>
+<button class="sidebar-btn sidebar-btn-accent" id="openSlackNav">↗ Slack連携</button>
+    </div>
+
+    <div class="nav-group">
+      <a class="nav-link" href="#/" id="navHome"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-8H9v8H4a1 1 0 0 1-1-1z"/></svg><span class="nav-text">ホーム</span></a>
+      <a class="nav-link" href="#/library" id="navAll"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="nav-text">すべての資料・ツール</span></a>
+      <a class="nav-link" href="#/mine" id="navMine"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="nav-text">自分の資料</span></a>
+      <a class="nav-link" href="#/saved" id="navSaved"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17l-6-4-6 4z"/></svg><span class="nav-text">保存済み <span class="count" id="savedCount"></span></span></a>
+    </div>
+
+    <div id="subNav"></div>
+
+    <button class="sidebar-foot account-button" id="accountButton" type="button" aria-label="Googleアカウントのログイン案内">
+      <div class="avatar">S</div>
+      <div>
+        <div class="who">sha</div>
+        <div class="mail">Googleアカウント（サンプル）</div>
+      </div>
+    </button>
+  </aside><div class="main"><header class="topbar"><button id="menuBtn" aria-label="メニューを開く" aria-expanded="false">☰</button><nav class="crumbs" id="crumbs" aria-label="パンくず"></nav><form class="search" id="searchForm" role="search"><span class="ic">⌕</span><input id="quickSearch" type="search" name="q" aria-label="業務・資料を検索" placeholder="業務名・資料名で検索"><button class="search-submit" type="submit">検索</button></form></header><main class="content" id="page"></main></div></div>
+<dialog class="modal" id="registerDialog"><div class="modal-head"><h2>資料・ツールを登録</h2><button data-close aria-label="閉じる">×</button></div><p class="lead">リンクの登録、またはHTML資料のアップロードができます。</p><div class="notice">画面確認用です。入力内容・ファイルは外部に送信されません。</div><div class="register-tabs"><button type="button" data-mode="link" class="active">リンクを登録</button><button type="button" data-mode="html">HTMLをアップロード</button></div><form id="registerForm"><div class="field"><label for="rTitle">タイトル *</label><input id="rTitle" name="title" required maxlength="100"></div><div class="field" id="urlField"><label for="rUrl">URL *</label><input id="rUrl" name="url" type="url" required placeholder="https://..."><small>GitHub・Google Drive・公開ページなど、既存の保存先URLを登録できます。</small></div><div class="field" id="fileField" hidden><label for="rFile">HTMLファイル *</label><input id="rFile" name="file" type="file" accept=".html,.htm,text/html"><small>ファイル名の確認だけを行います。本体は保存・送信しません。</small></div><div class="field"><label for="rPurpose">何に使えるか</label><textarea id="rPurpose" name="purpose" rows="2" maxlength="500" placeholder="用途を簡潔に記載"></textarea></div><div class="field-row"><div class="field"><label for="rSection">セクション</label><select id="rSection" name="section"></select></div><div class="field"><label for="rBusiness">関連する業務 *</label><select id="rBusiness" name="business" required></select></div></div><div class="field-row"><div class="field"><label for="rTournament">大会</label><select id="rTournament" name="tournament"></select></div><div class="field"><label for="rRound">開催回</label><select id="rRound" name="round"><option value="">共通</option><option>#03</option><option>#02</option></select></div></div><div class="field"><label for="rTag">タグ</label><input id="rTag" name="tag" maxlength="100" placeholder="受付、Voucherなど"></div><div class="field"><label for="rShare">共有範囲</label><select id="rShare" name="share"><option>全社共通</option><option>指定アカウントのみ</option></select></div><div class="field" id="recipientField" hidden><label for="rRecipients">共有先のメールアドレス *</label><input id="rRecipients" type="email" multiple name="recipients"><small>複数の場合はカンマ区切り</small></div><div class="modal-actions"><button class="btn" type="button" data-close>キャンセル</button><button class="btn primary" type="submit">登録する</button></div></form></dialog>
+<dialog class="modal" id="infoDialog"><div class="modal-head"><h2 id="infoTitle"></h2><button data-close aria-label="閉じる">×</button></div><div id="infoBody"></div></dialog><div class="toast-wrap" id="toastWrap" role="status"></div><script>
+const SECTIONS=["ディレクター","トーナメント","メディア","カスタマー","クリエイティブ","ロジスティックス","マーケティング","営業","インフルエンサー","その他"];
+const TOURNAMENTS=["JOPT","SPADIE","戦国","U-30"];
+const MATERIALS = [
+  {id:1,title:"Voucher関連資料",section:"カスタマー",tournament:"JOPT",round:"#03",tag:"Voucher",type:"資料",link:"Google Drive",purpose:"来場者向けVoucherの発行条件と利用ルールの確認用。",share:"全社共通",owner:"sha",updated:"11月14日"},
+  {id:2,title:"Ticket管理シート",section:"カスタマー",tournament:"JOPT",round:"#03",tag:"Ticket",type:"ツール",link:"Google Drive",purpose:"チケット販売・入場実績の記録と集計。",share:"全社共通",owner:"他メンバー",updated:"11月13日"},
+  {id:3,title:"大会運営マニュアル",section:"トーナメント",tournament:"JOPT",round:"#03",tag:"運営",type:"資料",link:"Google Drive",purpose:"当日の運営フローとスタッフ配置の確認用。",share:"全社共通",owner:"他メンバー",updated:"11月10日"},
+  {id:4,title:"配信用クリエイティブ",section:"クリエイティブ",tournament:"SPADIE",round:"",tag:"メディア",type:"資料",link:"Google Drive",purpose:"配信画面用の素材一式。",share:"指定アカウントのみ",owner:"sha",updated:"11月9日"},
+  {id:5,title:"搬入チェックリスト",section:"ロジスティックス",tournament:"戦国",round:"",tag:"会場",type:"資料",link:"Google Drive",purpose:"会場搬入時の確認項目一覧。",share:"全社共通",owner:"他メンバー",updated:"11月6日"},
+  {id:6,title:"企画書テンプレート",section:"マーケティング",tournament:"共通",round:"",tag:"企画",type:"ツール",link:"Google Drive",purpose:"新規企画の提出用フォーマット。",share:"全社共通",owner:"sha",updated:"11月2日"},
+  {id:7,title:"大会運営スクリプト（GitHub）",section:"トーナメント",tournament:"JOPT",round:"#03",tag:"自動化",type:"ツール",link:"GitHub（限定公開）",purpose:"大会当日の集計作業を自動化するスクリプト。GitHubの限定公開リポジトリで管理。",share:"指定アカウントのみ",owner:"他メンバー",updated:"11月15日",hasAccess:false},
+  {id:8,title:"JOPTスタートバナーツール",section:"クリエイティブ",tournament:"JOPT",round:"#03",tag:"バナー",type:"ツール",link:"公開先（Cloudflare）",purpose:"JOPTのスタートバナーを一気に作成できます。前回の構成に合わせて出力されます。",share:"全社共通",owner:"他メンバー",updated:"11月8日"},
+  {id:9,title:"クリエイティブのタスクボード",section:"クリエイティブ",tournament:"共通",round:"",tag:"タスク管理",type:"ツール",link:"公開先（Cloudflare）",purpose:"Slackで口頭で頼まれたことをAIが読み取り、着手済みかどうかを自動で判断します。",share:"全社共通",owner:"他メンバー",updated:"11月7日"},
+  {id:10,title:"協賛提案テンプレート",section:"営業",tournament:"U-30",round:"",tag:"協賛",type:"資料",link:"Google Drive",purpose:"協賛企業向けの提案書の雛形。",share:"全社共通",owner:"他メンバー",updated:"11月4日"},
+  {id:11,title:"Grok Bot 写真探しの実力 レポート",section:"メディア",tournament:"共通",round:"",tag:"AI設定",type:"資料",link:"Google Drive",purpose:"過去実績を参考に、似た写真を提案できるかを検証したレポート。",share:"全社共通",owner:"他メンバー",updated:"11月3日"},
+  {id:12,title:"大会振り返りシート",section:"ディレクター",tournament:"JOPT",round:"#02",tag:"振り返り",type:"ツール",link:"Google Drive",purpose:"大会終了後の振り返りを項目ごとに記録するシート。",share:"全社共通",owner:"他メンバー",updated:"11月1日"},
+];
+
+
+const BUSINESSES=[
+ {id:'review',section:'ディレクター',title:'大会の振り返り',purpose:'開催後の気づきと、次回へ引き継ぐ資料を確認する。'},
+ {id:'operations',section:'トーナメント',title:'大会当日の運営',purpose:'進行・スタッフ配置・集計に必要な資料とツールを確認する。'},
+ {id:'photo',section:'メディア',title:'撮影・写真選定',purpose:'写真選定の参考資料と、撮影前の確認事項を探す。'},
+ {id:'mission',section:'カスタマー',title:'ミッションチャレンジ',purpose:'運用ルール、参加管理、Voucher関連のツールをまとめて確認する。'},
+ {id:'tickets',section:'カスタマー',title:'Ticket管理',purpose:'チケットの記録・集計に使う資料を確認する。'},
+ {id:'broadcast',section:'クリエイティブ',title:'配信用素材の準備',purpose:'配信に必要な素材と、制作条件を確認する。'},
+ {id:'banner',section:'クリエイティブ',title:'スタートバナー制作',purpose:'バナー制作に使う外部ツールと仕様を確認する。'},
+ {id:'production',section:'クリエイティブ',title:'制作依頼の確認',purpose:'制作依頼の確認に使う既存ツールへの入口。'},
+ {id:'transport',section:'ロジスティックス',title:'会場搬入・撤収',purpose:'搬入手順と備品一覧をまとめて確認する。'},
+ {id:'planning',section:'マーケティング',title:'キャンペーンの企画',purpose:'企画書、実施条件、告知予定をまとめて確認する。'},
+ {id:'sales',section:'営業',title:'協賛提案の準備',purpose:'提案書と、提供内容を確認するための資料を探す。'},
+ {id:'appearance',section:'インフルエンサー',title:'出演・投稿連携',purpose:'出演予定と投稿素材、事前確認の資料をまとめて確認する。'},
+ {id:'handover',section:'その他',title:'社内の引き継ぎ',purpose:'部署共通で使う記入例、管理表、関連ツールを探す。'}
+];
+const assoc={1:'mission',2:'tickets',3:'operations',4:'broadcast',5:'transport',6:'planning',7:'operations',8:'banner',9:'production',10:'sales',11:'photo',12:'review'};
+MATERIALS.forEach(m=>{m.business=assoc[m.id];if(m.tournament!=='共通'&&!m.round)m.round='#03';});
+const EXTRA=[
+ ['mission','ミッション参加管理シート','参加状況と付与対象を確認する。','管理表','JOPT','#03'],
+ ['mission','Voucher付与確認ツール','付与対象の確認に使う外部ツールの入口。','ツール','JOPT','#03'],
+ ['operations','スタッフ配置表','担当ポジションと配置を確認する。','管理表','JOPT','#03'],
+ ['broadcast','配信素材の制作条件','素材のサイズ・表記条件を確認する。','資料','SPADIE','#03'],
+ ['transport','搬入備品一覧','会場へ持ち込む備品を確認する。','管理表','戦国','#03'],
+ ['planning','告知スケジュール','キャンペーンの告知予定を確認する。','管理表','共通',''],
+ ['sales','協賛メニュー一覧','提案内容を整理する際の参照用。','資料','U-30','#03'],
+ ['appearance','出演・投稿の確認資料','出演前に確認する条件と担当窓口を確認する。','資料','U-30','#03'],
+ ['appearance','出演スケジュール','出演日程と関連資料を確認する。','管理表','U-30','#03'],
+ ['appearance','投稿素材の共有先','投稿に使う素材の保存先への入口。','リンク','U-30','#03'],
+ ['handover','引き継ぎ記入例','部署共通の引き継ぎ項目を確認する。','資料','共通',''],
+ ['handover','引き継ぎ管理表','引き継ぐ内容と担当を一覧で確認する。','管理表','共通',''],
+ ['handover','議事録整理ツール','会議メモの整理に使う外部ツールの入口。','ツール','共通','']
+];
+EXTRA.forEach((x,n)=>{const b=BUSINESSES.find(b=>b.id===x[0]);MATERIALS.push({id:13+n,business:x[0],title:x[1],purpose:x[2],type:x[3],tournament:x[4],round:x[5],section:b.section,tag:b.title,link:x[3]==='ツール'?'外部ツール':'Google Drive',share:'全社共通',owner:'サンプル担当',updated:'11月12日'});});
+const NEWS=[
+ {id:'n1',headline:'業務資料とツールを、ひとつの業務から探す',date:'11月16日',body:['企画書、管理表、ツールは、それぞれ別の場所に保存されていることがあります。業務ごとに入口をまとめると、必要な資料を一緒に確認できます。','ミッションチャレンジなら、運用ルール、参加管理シート、Voucher関連ツールへ同じ業務ページから進む構成を想定しています。']},
+ {id:'n2',headline:'Codexで資料を取得するときに、AIニュースも受け取る',date:'11月15日',body:['Codexからポータルを利用した際、資料の検索結果と最新ニュースを同じ応答で受け取る表示例です。','この原型では見え方だけを確認します。実際のMCP接続とニュース配信は行っていません。']},
+ {id:'n3',headline:'制作依頼の前に、用途と必要な素材を整理する',date:'11月14日',body:['何に使う制作物か、いつ必要か、参照する素材はどれか。関連資料をまとめて確認できれば、担当間で相談する際の入口になります。','クリエイティブの業務ページには、バナー制作や配信素材に関する例示資料を置いています。']}
+];
+const PICKS=[
+ {id:'tickets',dept:'カスタマー部門より',benefit:'チケットの記録や集計を確認したい時に、関連する資料へすぐ進めます。'},
+ {id:'operations',dept:'トーナメント部門より',benefit:'大会当日の運営に必要なマニュアルと配置表を、まとめて確認できます。'},
+ {id:'transport',dept:'ロジスティックス部門より',benefit:'会場搬入に立ち会う前に、手順と備品一覧を確認できます。'}
+];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const a=(path,text,cls='')=>`<a class="${cls}" href="#${esc(path)}">${text}</a>`;
+const byId=id=>MATERIALS.find(m=>m.id===Number(id));
+const business=id=>BUSINESSES.find(b=>b.id===id);
+let saved=new Set([2,4]),mode='link',sectionsOpen=null,eventsOpen=null;
+try{const x=JSON.parse(sessionStorage.getItem('portal-b-v2'));if(x){saved=new Set(x.saved||[]);MATERIALS.push(...(x.added||[]).filter(m=>m&&Number.isInteger(m.id)&&m.id>=1000&&typeof m.title==='string'));}}catch{}
+function persist(){try{sessionStorage.setItem('portal-b-v2',JSON.stringify({saved:[...saved],added:MATERIALS.filter(m=>m.id>=1000)}));}catch{}}
+function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;$('toastWrap').append(e);requestAnimationFrame(()=>e.classList.add('show'));setTimeout(()=>e.remove(),3000);}
+function route(){const raw=location.hash.slice(1)||'/';const [path,...rest]=raw.split('?');let parts;try{parts=path.split('/').filter(Boolean).map(decodeURIComponent);}catch{parts=['missing'];}return {parts,params:new URLSearchParams(rest.join('?'))};}
+function go(path){if(location.hash==='#'+path)render();else location.hash=path;}
+function crumb(parts){$('crumbs').innerHTML=[a('/','ホーム','crumb'),...parts.map(([name,path])=>path?a(path,esc(name),'crumb'):`<span aria-current="page">${esc(name)}</span>`)].join('<span class="crumb-sep">›</span>');}
+function heading(t,p=''){return `<div class="page-heading"><h1>${esc(t)}</h1>${p?`<p>${esc(p)}</p>`:''}</div>`;}
+function note(){return '<p class="page-footnote">画面確認用。業務・資料・開催回の組み合わせは例示です。実際の運用・権限設定には接続していません。</p>';}
+function info(title,body){$('infoTitle').textContent=title;$('infoBody').innerHTML=body;$('infoDialog').showModal();}
+function closeSidebar(){$('sidebar').classList.remove('open');$('sidebarOverlay').classList.remove('show');$('menuBtn').setAttribute('aria-expanded','false');}
+function context(r){const [k,id]=r.parts;const m=['resource','preview'].includes(k)?byId(id):null;const b=k==='business'?business(id):m?business(m.business):null;return {section:k==='section'?id:b?.section,tournament:['tournament','edition'].includes(k)?id:m?.tournament};}
+const NAV_ICONS={"home": "<path d=\"m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-8H9v8H4a1 1 0 0 1-1-1z\"/>", "grid": "<rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/>", "folder": "<path d=\"M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/>", "bookmark": "<path d=\"M6 4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17l-6-4-6 4z\"/>", "layers": "<path d=\"m12 3 10 5-10 5L2 8zM2 13l10 5 10-5M2 18l10 5 10-5\"/>", "flag": "<path d=\"M5 22V3m0 1c5-4 9 4 15 0v11c-6 4-10-4-15 0\"/>"};
+function navIcon(name){return `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${NAV_ICONS[name]||NAV_ICONS.folder}</svg>`;}
+function renderNav(r){const [k]=r.parts,ctx=context(r);const mark={home:!k,all:k==='library'||k==='search',mine:k==='mine',saved:k==='saved'};Object.entries(mark).forEach(([n,on])=>{const el=$({home:'navHome',all:'navAll',mine:'navMine',saved:'navSaved'}[n]);el.classList.toggle('active',on);if(on)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});$('savedCount').textContent=`(${saved.size})`;
+ const so=sectionsOpen===null?(!!ctx.section||k==='sections'):sectionsOpen,eo=eventsOpen===null?(!!ctx.tournament||k==='tournaments'):eventsOpen;
+ $('subNav').innerHTML=`<div class="nav-group"><div class="nav-parent-row">${a('/sections',navIcon('layers')+'<span class="nav-text">セクションから探す</span>','nav-link')}<button class="nav-expand" data-toggle="sections" aria-label="部署一覧を開閉" aria-expanded="${so}">${so?'⌄':'›'}</button></div>${so?SECTIONS.map(s=>a('/section/'+encodeURIComponent(s),navIcon('folder')+'<span class="nav-text">'+esc(s)+'</span>','nav-link nav-sub '+(ctx.section===s?'active':''))).join(''):''}</div><div class="nav-group"><div class="nav-parent-row">${a('/tournaments',navIcon('flag')+'<span class="nav-text">大会から探す</span>','nav-link')}<button class="nav-expand" data-toggle="events" aria-label="大会一覧を開閉" aria-expanded="${eo}">${eo?'⌄':'›'}</button></div>${eo?TOURNAMENTS.map(t=>a('/tournament/'+encodeURIComponent(t),navIcon('flag')+'<span class="nav-text">'+esc(t)+'</span>','nav-link nav-sub '+(ctx.tournament===t?'active':''))).join(''):''}</div>`;}
+function tags(){return ['Voucher','Ticket','バナー'].map(t=>a('/search?q='+encodeURIComponent(t),esc(t),'chip')).join('');}
+function projectCard(b){const n=MATERIALS.filter(m=>m.business===b.id).length;return a('/business/'+b.id,`<small>${esc(b.section)}</small><h2>${esc(b.title)}</h2><p>${esc(b.purpose)}</p><span class="card-foot">${n}件の資料・ツール<span>→</span></span>`,'business-card');}
+function home(){crumb([]);return `<div class="home-heading"><h1>ホーム</h1><p>業務で使う資料・ツールを、部署や大会から探せます。</p></div><div class="tag-line"><span>タグから探す</span>${tags()}</div><div class="home-row"><section><div class="section-header"><h2>PICK UP · 他部署のこんな資料が使えます</h2></div><div class="pick-list">${PICKS.map(p=>a('/business/'+p.id,`<span class="dept-tag">${esc(p.dept)}</span><div class="benefit">${esc(p.benefit)}</div><span class="source-title">${esc(business(p.id).title)} を見る →</span>`,'pick-item')).join('')}</div><p class="sample-note">おすすめ表示のサンプルです。自動抽出の方式は今後検討します。</p></section><section><div class="section-header"><h2>AIニュース</h2>${a('/news','一覧 →')}</div>${NEWS.map(n=>a('/news/'+n.id,`<div class="headline">${esc(n.headline)} →</div><div class="date">${n.date} · 表示例</div>`,'news-item')).join('')}<p class="news-note">記事はすべて画面確認用の架空記事です。</p></section></div>`;}
+function rows(list){return list.length?`<table class="data-table"><colgroup><col><col class="c-owner"><col class="c-date"><col class="c-action"></colgroup><thead><tr><th>資料・ツール</th><th>登録者</th><th>更新日</th><th>操作</th></tr></thead><tbody>${list.map(m=>`<tr><td>${a('/resource/'+m.id,`<span class="r-ic">${m.hasAccess===false?'限定':m.type==='ツール'?'ツール':m.type==='HTML'?'HTML':'資料'}</span><span style="min-width:0"><span class="r-title">${esc(m.title)}</span><span class="r-purpose" style="display:block">${esc(m.purpose)}</span><span class="r-tags" style="display:block">${esc(business(m.business)?.title||m.section)} · ${esc(m.tournament)} ${esc(m.round)}</span></span>`,'r-name')}</td><td>${esc(m.owner==='sha'?'自分':m.owner)}</td><td>${esc(m.updated)}</td><td class="r-actions">${a('/resource/'+m.id,'詳細 →')}<button class="icon-btn ${saved.has(m.id)?'active':''}" data-save="${m.id}" aria-label="${esc(m.title)}を${saved.has(m.id)?'保存済みから外す':'保存する'}" aria-pressed="${saved.has(m.id)}">${saved.has(m.id)?'★':'☆'}</button></td></tr>`).join('')}</tbody></table>`:'<p class="empty">該当する資料・ツールがありません。検索条件を変更してください。</p>';}
+function pageList(kind,params){const q=params.get('q')||'',section=params.get('section')||'',type=params.get('type')||'';let list=MATERIALS.filter(m=>(kind!=='mine'||m.owner==='sha')&&(kind!=='saved'||saved.has(m.id))&&(!section||m.section===section)&&(!type||m.type===type)&&(!q||[m.title,m.tag,m.purpose,m.section,business(m.business)?.title||''].join(' ').toLowerCase().includes(q.toLowerCase())));const t={library:'すべての資料・ツール',mine:'自分の資料',saved:'保存済み',search:'検索結果'}[kind];crumb([[t]]);const bs=q?BUSINESSES.filter(b=>[b.title,b.purpose].join(' ').toLowerCase().includes(q.toLowerCase())):[];return `${heading(t,kind==='search'?`「${q}」に関連する業務・資料を表示しています。`:'用途を確認して、必要な資料へ進めます。')}<form class="list-toolbar" id="filters"><label>セクション<select name="section"><option value="">すべて</option>${SECTIONS.map(s=>`<option ${s===section?'selected':''}>${s}</option>`).join('')}</select></label><label>種類<select name="type"><option value="">すべて</option>${['資料','管理表','ツール','リンク','HTML'].map(s=>`<option ${s===type?'selected':''}>${s}</option>`).join('')}</select></label><span class="count">${list.length}件</span></form>${bs.length?`<h2 class="section-title">関連する業務</h2><div class="business-grid">${bs.map(projectCard).join('')}</div><h2 class="section-title">資料・ツール</h2>`:''}${rows(list)}`;}
+function sections(){crumb([['セクションから探す']]);return heading('セクションから探す','部署を選び、関連する業務へ進みます。')+`<div class="directory">${SECTIONS.map(s=>a('/section/'+encodeURIComponent(s),`<span><strong>${esc(s)}</strong><small>${BUSINESSES.filter(b=>b.section===s).map(b=>b.title).join('・')}</small></span><span>→</span>`)).join('')}</div>`;}
+function sectionPage(s){crumb([['セクション','/sections'],[s]]);return heading(s,'業務を選んで、関連する企画書・管理表・ツールを確認できます。')+`<div class="business-grid">${BUSINESSES.filter(b=>b.section===s).map(projectCard).join('')}</div>`;}
+function tournaments(){crumb([['大会から探す']]);return heading('大会から探す','大会を選んでから、開催回へ進みます。')+`<div class="directory">${TOURNAMENTS.map(t=>a('/tournament/'+encodeURIComponent(t),`<strong>${esc(t)}</strong><span>→</span>`)).join('')}</div>`;}
+function tournamentPage(t){crumb([['大会','/tournaments'],[t]]);const rounds=[...new Set(MATERIALS.filter(m=>m.tournament===t).map(m=>m.round).filter(Boolean))];return heading(t,'開催回の表示例です。選ぶと関連する業務へ進みます。')+`<div class="directory">${rounds.map(r=>a('/edition/'+encodeURIComponent(t)+'/'+encodeURIComponent(r),`<span><strong>${esc(t)} 2026 ${esc(r)}</strong><small>開催回 · サンプル</small></span><span>→</span>`)).join('')}</div>`;}
+function editionPage(t,r){crumb([['大会','/tournaments'],[t,'/tournament/'+encodeURIComponent(t)],[`${t} 2026 ${r}`]]);const ids=new Set(MATERIALS.filter(m=>m.tournament===t&&m.round===r).map(m=>m.business));return heading(`${t} 2026 ${r}`,'この開催回に関連する業務の表示例です。')+`<div class="business-grid">${BUSINESSES.filter(b=>ids.has(b.id)).map(projectCard).join('')}</div>`;}
+function businessPage(b){crumb([[b.section,'/section/'+encodeURIComponent(b.section)],[b.title]]);return heading(b.title,b.purpose)+`<h2 class="section-title">この業務で使う資料・ツール</h2>${rows(MATERIALS.filter(m=>m.business===b.id))}<p class="business-note">業務と資料の紐付けは画面確認用のサンプルです。</p>`;}
+function detail(m){const b=business(m.business);crumb([[m.section,'/section/'+encodeURIComponent(m.section)],...(b?[[b.title,'/business/'+b.id]]:[]),[m.title]]);return `${heading(m.title,m.purpose)}<div class="detail-panel">${m.hasAccess===false?'<div class="notice" style="margin-bottom:20px">限定共有の資料です。原本の閲覧権限に従います。ここでは権限変更を行いません。</div>':''}<dl class="detail-meta"><dt>関連する業務</dt><dd>${b?a('/business/'+b.id,esc(b.title)):'—'}</dd><dt>セクション</dt><dd>${a('/section/'+encodeURIComponent(m.section),esc(m.section))}</dd><dt>大会・開催回</dt><dd>${m.tournament==='共通'?'共通':a('/tournament/'+encodeURIComponent(m.tournament),esc(m.tournament)+' '+esc(m.round))}</dd><dt>タグ</dt><dd>${String(m.tag||'').split(/[,、]/).filter(Boolean).map(t=>a('/search?q='+encodeURIComponent(t),esc(t),'chip')).join(' ')}</dd><dt>リンク先</dt><dd>${esc(m.link)}</dd><dt>共有範囲</dt><dd>${esc(m.share)}${m.recipients?'：'+esc(m.recipients):''}</dd>${m.filename?`<dt>ファイル名</dt><dd>${esc(m.filename)}</dd>`:''}</dl><div class="detail-actions"><button class="btn primary" data-external="${m.id}">${m.type==='ツール'?'ツールを開く ↗':'資料を開く ↗'}</button><button class="btn" data-save="${m.id}">${saved.has(m.id)?'★ 保存済み':'☆ 保存する'}</button>${m.hasAccess===false?`<button class="btn" data-request="${m.id}">Slackでアクセスをリクエスト</button>`:''}</div><p class="sample-note">リンク先は未接続です。原型内にツールの操作画面は実装していません。</p></div>`;}
+function newsPage(id){const n=NEWS.find(n=>n.id===id);if(!n)return missing();crumb([['AIニュース','/news'],[n.headline]]);return heading(n.headline)+`<article class="news-article"><div class="article-meta">${n.date} · 架空記事／表示例</div>${n.body.map(s=>`<p>${esc(s)}</p>`).join('')}<div class="notice">画面確認用に作成した記事です。実際の報道や社内の決定事項ではありません。</div></article>`;}
+function missing(){crumb([['ページが見つかりません']]);return heading('ページが見つかりません')+a('/','ホームに戻る →');}
+function render(){const r=route();let [k,id,round]=r.parts;if(k==='preview'){k='resource';history.replaceState(null,'','#/resource/'+encodeURIComponent(id||''));}renderNav({...r,parts:[k,id,round]});let content;
+ if(!k)content=home();else if(['library','search','mine','saved'].includes(k))content=pageList(k,r.params);else if(k==='sections')content=sections();else if(k==='section'&&SECTIONS.includes(id))content=sectionPage(id);else if(k==='tournaments')content=tournaments();else if(k==='tournament'&&TOURNAMENTS.includes(id))content=tournamentPage(id);else if(k==='edition'&&TOURNAMENTS.includes(id))content=editionPage(id,round||'');else if(k==='business'&&business(id))content=businessPage(business(id));else if(k==='resource'&&byId(id))content=detail(byId(id));else if(k==='news'&&id)content=newsPage(id);else if(k==='news'){crumb([['AIニュース']]);content=heading('AIニュース','以下はすべて画面確認用の架空記事です。')+`<div class="news-list">${NEWS.map(n=>a('/news/'+n.id,`<div class="date">${n.date} · 表示例</div><h2 class="headline">${esc(n.headline)}</h2><p>${esc(n.body[0])}</p>`,'news-item')).join('')}</div>`;}else content=missing();$('page').innerHTML=content+note();$('quickSearch').value=k==='search'?(r.params.get('q')||''):'';document.title=($('page').querySelector('h1')?.textContent||'業務ポータル')+'｜業務ポータル';}
+function showCodex(){info('Codexと連携（プレビュー）',`<p class="lead">資料の検索・取得・登録と、AIニュースを受け取る表示例です。実接続は行いません。</p><div class="codex-panel"><div class="bubble from-portal"><span class="tag">あなた → Codex</span>ミッションチャレンジの資料を探して</div><div class="bubble from-codex"><span class="tag">Codex</span>${a('/business/mission','ミッションチャレンジ')}の運用資料、参加管理シート、Voucher関連ツールが見つかりました。</div><div class="bubble from-codex"><span class="tag">AIニュース · 表示例</span>${a('/news/n1',esc(NEWS[0].headline))}</div><div class="bubble from-portal"><span class="tag">あなた → Codex</span>この成果物を業務ポータルに登録して</div><div class="bubble from-codex"><span class="tag">Codex</span>投稿ルールと不足項目を確認し、登録内容の確認へ進みます。</div></div>`);}
+function showSlack(m){const example=m||byId(7);info('GitHub資料へのアクセス申請（プレビュー）',`<p class="lead">GitHubの限定共有資料を見つけた社員が、資料の登録者へ閲覧権限を申請する流れです。</p><div class="notice">通知先は資料の登録者を想定しています。実際のSlack送信・承認・GitHub招待は行いません。</div><div class="codex-panel" style="margin-top:16px"><div class="bubble from-portal"><span class="tag">① 社員 → ポータル</span>「${esc(example.title)}」へのアクセスを申請</div><div class="bubble from-codex"><span class="tag">② Slack → 資料の登録者（表示例）</span>サンプルユーザーが資料へのアクセスを希望しています。<br>資料：${esc(example.title)}<br>保存先：GitHub（限定公開）</div><div class="bubble from-codex"><span class="tag">③ 登録者が確認・承認</span>申請者と利用目的を確認し、承認後にGitHubへの招待へ進む想定です。</div></div><p class="sample-note">資料の本体はGitHubに置いたまま、ポータルを発見・申請の入口にします。ポータルの共有設定だけでGitHubの閲覧権限が付くことはありません。</p>`);}
+
+function setMode(m){mode=m;document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));$('urlField').hidden=m!=='link';$('fileField').hidden=m!=='html';$('rUrl').disabled=m!=='link';$('rUrl').required=m==='link';$('rFile').disabled=m!=='html';$('rFile').required=m==='html';}
+function updateBusinesses(){const bs=BUSINESSES.filter(b=>b.section===$('rSection').value);$('rBusiness').innerHTML=bs.map(b=>`<option value="${b.id}">${esc(b.title)}</option>`).join('');}
+function updateRecipients(){const limited=$('rShare').value==='指定アカウントのみ';$('recipientField').hidden=!limited;$('rRecipients').required=limited;}
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(b?.hasAttribute('data-close'))b.closest('dialog').close();if(b?.dataset.toggle){if(b.dataset.toggle==='sections')sectionsOpen=b.getAttribute('aria-expanded')!=='true';else eventsOpen=b.getAttribute('aria-expanded')!=='true';renderNav(route());}if(b?.dataset.mode)setMode(b.dataset.mode);if(b?.dataset.save){const id=Number(b.dataset.save);saved.has(id)?saved.delete(id):saved.add(id);persist();render();toast(saved.has(id)?'保存済みに追加しました':'保存済みから解除しました');}if(b?.dataset.external){const m=byId(b.dataset.external);if(m)info('外部の資料・ツールを開く',`<p class="lead">${esc(m.title)}</p><div class="notice">正式版では登録されたリンク先を開きます。この原型では外部サービスに接続していません。</div>`);}if(b?.dataset.request)showSlack(byId(b.dataset.request));if(e.target.closest('a[href^="#/"]')){document.querySelectorAll('dialog[open]').forEach(d=>d.close());closeSidebar();}});
+$('searchForm').onsubmit=e=>{e.preventDefault();go('/search?q='+encodeURIComponent($('quickSearch').value.trim()));};
+$('page').addEventListener('change',e=>{if(e.target.closest('#filters')){const r=route(),f=$('filters');for(const name of ['section','type']){const v=f.elements[name].value;if(v)r.params.set(name,v);else r.params.delete(name);}go('/'+r.parts[0]+'?'+r.params.toString());}});
+$('menuBtn').onclick=()=>{const on=!$('sidebar').classList.contains('open');$('sidebar').classList.toggle('open',on);$('sidebarOverlay').classList.toggle('show',on);$('menuBtn').setAttribute('aria-expanded',String(on));};$('closeSidebar').onclick=closeSidebar;$('sidebarOverlay').onclick=closeSidebar;
+$('openCodexNav').onclick=()=>{closeSidebar();showCodex();};$('openSlackNav').onclick=()=>{closeSidebar();showSlack();};$('accountButton').onclick=()=>info('Googleアカウントでログイン','<p class="lead">正式版では会社のGoogleアカウントでログインします。</p><div class="notice">現在はサンプルユーザーとして表示しています。実際の認証は行いません。</div>');$('openRegister').onclick=()=>{closeSidebar();$('registerDialog').showModal();};
+$('rSection').innerHTML=SECTIONS.map(s=>`<option>${s}</option>`).join('');$('rSection').value='カスタマー';$('rTournament').innerHTML=[...TOURNAMENTS,'共通'].map(t=>`<option>${t}</option>`).join('');updateBusinesses();$('rSection').onchange=updateBusinesses;$('rShare').onchange=updateRecipients;setMode('link');
+$('registerForm').addEventListener('input',e=>e.target.setCustomValidity?.(''));
+$('registerForm').onsubmit=e=>{e.preventDefault();const f=e.target;if(!f.reportValidity())return;const title=$('rTitle').value.trim();if(!title){$('rTitle').setCustomValidity('タイトルを入力してください');$('rTitle').reportValidity();return;}if(mode==='link'&&!/^https?:\/\//i.test($('rUrl').value)){$('rUrl').setCustomValidity('http:// または https:// のURLを入力してください');$('rUrl').reportValidity();return;}if(mode==='html'&&!/\.html?$/i.test($('rFile').files[0]?.name||'')){toast('HTMLファイルを選んでください');return;}const filename=mode==='html'?$('rFile').files[0].name:'';const id=Math.max(1000,...MATERIALS.map(m=>m.id))+1;MATERIALS.unshift({id,title,business:$('rBusiness').value,section:$('rSection').value,tournament:$('rTournament').value,round:$('rRound').value,tag:$('rTag').value.trim()||'その他',purpose:$('rPurpose').value.trim()||'デモで登録した資料です。',type:mode==='html'?'HTML':'リンク',link:mode==='html'?'HTML資料（未アップロード）':$('rUrl').value.trim(),filename,share:$('rShare').value,recipients:$('rShare').value==='指定アカウントのみ'?$('rRecipients').value:'',owner:'sha',updated:new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'long',day:'numeric'}).format(new Date())});persist();f.reset();$('rSection').value='カスタマー';updateBusinesses();updateRecipients();setMode('link');$('registerDialog').close();go('/resource/'+id);toast('デモ内に登録しました。実際の保存・送信は行っていません。');};
+window.addEventListener('hashchange',()=>{document.querySelectorAll('dialog[open]').forEach(d=>d.close());closeSidebar();render();window.scrollTo(0,0);});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSidebar();});render();
+</script></body></html>

@@ -1,0 +1,17 @@
+{
+  "id": "6d2313b8-cb99-46d6-a482-30f517703332",
+  "source": "api",
+  "strategy": "percentage",
+  "author_email": "xiao.h@japanopenpoker.com",
+  "annotations": {
+    "workers/message": "Support LINE Manager default menu during FAQ release",
+    "workers/triggered_by": "deployment"
+  },
+  "versions": [
+    {
+      "version_id": "d11cc332-914f-4ddb-9f3c-c8b9f30e1aaa",
+      "percentage": 100
+    }
+  ],
+  "created_on": "2026-11-06T09:11:44.337457Z"
+}

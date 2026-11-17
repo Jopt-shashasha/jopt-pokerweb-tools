@@ -178,6 +178,7 @@ webhook.post('/webhook', async (c) => {
           c.env.LIFF_URL,
           c.env.IMAGES,
           proxyDispatch,
+          c.env.FAQ_CONTACT_IDS_ENCRYPTION_KEY,
         );
       } catch (err) {
         console.error('Error handling webhook event:', err);
@@ -206,6 +207,7 @@ async function handleEvent(
   liffUrl?: string,
   r2?: import('../services/object-storage.js').ObjectStorage,
   proxyDispatch?: HarnessProxyDispatch,
+  intakeEncryptionKey?: string,
 ): Promise<void> {
   if (event.type === 'follow') {
     const userId =
@@ -403,6 +405,7 @@ async function handleEvent(
 
     if (await handleFaq(db, {
       accountId: lineAccountId ?? null, friendId: friend.id, kind: 'postback', value: postbackData,
+      intake: { key: intakeEncryptionKey, origin: workerUrl || '' },
       eventId: (event as unknown as { webhookEventId?: string }).webhookEventId || `postback:${event.replyToken}`,
       send: (message) => workerUrl
         ? replyViaHarnessProxy(workerUrl, lineAccessToken, event.replyToken, [message as Message], proxyDispatch)

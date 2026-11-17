@@ -1,0 +1,17 @@
+{
+  "/health": 200,
+  "/console/faq": 200,
+  "/console/chats": 200,
+  "accounts": 1,
+  "faqReleases": 5,
+  "chatCount": 155,
+  "chatDetailHistoryField": "ok",
+  "sampleValidation": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "bindingsPreserved": 25,
+  "schedulesPreserved": 2,
+  "faqPointersPreserved": true,
+  "newChatUi": "verified"
+}

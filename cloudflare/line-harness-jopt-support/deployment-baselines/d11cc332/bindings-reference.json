@@ -1,0 +1,143 @@
+[
+  {
+    "name": "ADMIN_COOKIE_SAMESITE",
+    "text": "Lax",
+    "type": "plain_text"
+  },
+  {
+    "name": "ADMIN_ORIGIN",
+    "text": "https://line-harness-jopt-support.xiao-h-9b5.workers.dev",
+    "type": "plain_text"
+  },
+  {
+    "name": "APPWRITE_BANDWIDTH_LIMIT_BYTES",
+    "text": "5000000000",
+    "type": "plain_text"
+  },
+  {
+    "name": "APPWRITE_BILLING_ANCHOR",
+    "text": "2026-10-17T00:00:00.000Z",
+    "type": "plain_text"
+  },
+  {
+    "name": "APPWRITE_BUCKET_ID",
+    "text": "6ad338b3002987cffde2",
+    "type": "plain_text"
+  },
+  {
+    "name": "APPWRITE_ENDPOINT",
+    "text": "https://fra.cloud.appwrite.io/v1",
+    "type": "plain_text"
+  },
+  {
+    "name": "APPWRITE_PROJECT_ID",
+    "text": "6ad33813000dd5ab3dca",
+    "type": "plain_text"
+  },
+  {
+    "name": "APPWRITE_STORAGE_LIMIT_BYTES",
+    "text": "2000000000",
+    "type": "plain_text"
+  },
+  {
+    "name": "APPWRITE_USAGE_KEY_EXPIRES_AT",
+    "text": "never",
+    "type": "plain_text"
+  },
+  {
+    "name": "CF_ANALYTICS_ACCOUNT_ID",
+    "text": "9b50e8cea0fe5553c90404e7757fe679",
+    "type": "plain_text"
+  },
+  {
+    "name": "CF_ANALYTICS_TOKEN_EXPIRES_AT",
+    "text": "2027-01-24",
+    "type": "plain_text"
+  },
+  {
+    "name": "CF_CAPACITY_PLAN",
+    "text": "free",
+    "type": "plain_text"
+  },
+  {
+    "name": "LINE_CHANNEL_ID",
+    "text": "2011834690",
+    "type": "plain_text"
+  },
+  {
+    "name": "LOG_RETENTION_DAYS",
+    "text": "0",
+    "type": "plain_text"
+  },
+  {
+    "name": "WORKER_NAME",
+    "text": "line-harness-jopt-support",
+    "type": "plain_text"
+  },
+  {
+    "name": "WORKER_URL",
+    "text": "https://line-harness-jopt-support.xiao-h-9b5.workers.dev",
+    "type": "plain_text"
+  },
+  {
+    "name": "API_KEY",
+    "type": "secret_text",
+    "valueExported": false
+  },
+  {
+    "name": "APPWRITE_API_KEY",
+    "type": "secret_text",
+    "valueExported": false
+  },
+  {
+    "name": "APPWRITE_USAGE_API_KEY",
+    "type": "secret_text",
+    "valueExported": false
+  },
+  {
+    "name": "CF_ANALYTICS_TOKEN",
+    "type": "secret_text",
+    "valueExported": false
+  },
+  {
+    "name": "FAQ_CONTACT_IDS_ENCRYPTION_KEY",
+    "type": "secret_text",
+    "valueExported": false
+  },
+  {
+    "name": "FAQ_SLACK_BOT_TOKEN",
+    "type": "secret_text",
+    "valueExported": false
+  },
+  {
+    "name": "FAQ_SLACK_SIGNING_SECRET",
+    "type": "secret_text",
+    "valueExported": false
+  },
+  {
+    "name": "LINE_CHANNEL_ACCESS_TOKEN",
+    "type": "secret_text",
+    "valueExported": false
+  },
+  {
+    "name": "LINE_CHANNEL_SECRET",
+    "type": "secret_text",
+    "valueExported": false
+  },
+  {
+    "name": "ASSETS",
+    "type": "assets",
+    "contentsExported": false
+  },
+  {
+    "name": "DB",
+    "type": "d1",
+    "database_id": "9048047a-7ec0-47f8-bb43-8326e70e44f5"
+  },
+  {
+    "name": "TENANT_SCHEDULER",
+    "type": "durable_object_namespace",
+    "class_name": "TenantScheduler",
+    "namespace_id": "ae4e604c9f634e0d93db522ee14d7dc4"
+  }
+]

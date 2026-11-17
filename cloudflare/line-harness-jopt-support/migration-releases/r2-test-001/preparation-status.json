@@ -1,0 +1,34 @@
+{
+  "release": "r2-test-001",
+  "baseVersion": "d11cc332-914f-4ddb-9f3c-c8b9f30e1aaa",
+  "status": "PREPARED_NOT_DEPLOYED",
+  "r2Subscription": "ACTIVE_CONFIRMED_IN_DASHBOARD",
+  "bucket": {
+    "name": "line-harness-jopt-support-images",
+    "storageClass": "Standard",
+    "publicAccess": "Disabled"
+  },
+  "candidateIdentity": {
+    "displayName": "ショウ.Sha",
+    "lineAccountId": "9ff322c4-32e5-4afc-a361-006361c1f503",
+    "lineUserId": "Ub78af99c321e011e37d1cbf7eacb802d",
+    "friendId": "f544dd37-3578-43cb-bf6b-26e6419e8425",
+    "source": "authenticated Harness friends exact-name search",
+    "confirmedAsUser": true
+  },
+  "checks": {
+    "baselineHashes": "PASS_8_MODULES",
+    "adapterTests": "PASS_10_TESTS",
+    "candidateSyntax": "PASS_8_MODULES",
+    "onlyExpectedModuleChanged": true,
+    "archiveScriptSyntax": "PASS"
+  },
+  "canonicalArchive": "BLOCKED_WRITE_PERMISSION",
+  "workerBindingCreated": false,
+  "workerDeployed": false,
+  "realR2ImageTest": false,
+  "rollbackRehearsal": false,
+  "dataBackupPerformed": false,
+  "productionCodeModified": false,
+  "quotaMonitoringIntegrated": false
+}

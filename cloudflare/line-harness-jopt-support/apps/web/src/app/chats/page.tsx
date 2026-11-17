@@ -18,6 +18,8 @@ import { Input } from '@cloudflare/kumo/components/input'
 import { Radio } from '@cloudflare/kumo/components/radio'
 import { Select } from '@cloudflare/kumo/components/select'
 import { faqPostbackLabel } from './faq-postback'
+import { FaqHandoffContexts } from '@/components/chats/faq-handoff-contexts'
+import { FaqCases } from '@/components/chats/faq-cases'
 
 interface Chat {
   id: string
@@ -67,6 +69,7 @@ function isRichMenuSwitch(msg: { direction: string; messageType: string; content
 interface ChatDetail extends Chat {
   friendName: string
   friendPictureUrl: string | null
+  faqHandoffContexts?: Array<{ classification: string; createdAt: string }>
   messages?: ChatMessage[]
 }
 
@@ -1136,6 +1139,10 @@ export default function ChatsPage() {
               {/* Notes — PC(xl+)は右サイドバーに常設。狭い画面のみトグル表示 */}
               {showMobileMemo && (
                 <div className="xl:hidden px-4 py-2 border-t border-gray-200 bg-gray-50">
+                  <div className="mb-3"><FaqCases key={selectedChatId} friendId={selectedChatId} /></div>
+                  {chatDetail?.id === selectedChatId && !!chatDetail.faqHandoffContexts?.length && (
+                    <div className="mb-3"><FaqHandoffContexts contexts={chatDetail.faqHandoffContexts} /></div>
+                  )}
                   <div className="flex items-center gap-2">
                     <Input
                       aria-label="友だちメモ"
@@ -1318,6 +1325,7 @@ export default function ChatsPage() {
           <div className="hidden xl:flex">
             <FriendInfoSidebar
               friendId={selectedFriendId || selectedChatId}
+              faqHandoffContexts={chatDetail?.id === (selectedFriendId || selectedChatId) ? chatDetail.faqHandoffContexts : undefined}
               chatStatus={
                 chatDetail && chatDetail.id === (selectedFriendId || selectedChatId)
                   ? { status: chatDetail.status, notes: chatDetail.notes }

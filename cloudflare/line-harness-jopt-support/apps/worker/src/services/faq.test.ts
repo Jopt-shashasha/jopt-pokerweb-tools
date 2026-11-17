@@ -23,6 +23,7 @@ beforeEach(()=>{
     CREATE TABLE messages_log(id TEXT PRIMARY KEY,friend_id TEXT,direction TEXT,message_type TEXT,content TEXT,source TEXT,line_account_id TEXT,created_at TEXT);`);
   sqlite.exec(readFileSync(new NodeURL('../../../../packages/db/migrations/073_faq_releases.sql',import.meta.url),'utf8'));
   sqlite.exec(readFileSync(new NodeURL('../../../../packages/db/migrations/075_faq_test_menu_members.sql',import.meta.url),'utf8'));
+  sqlite.exec(readFileSync(new NodeURL('../../../../packages/db/migrations/076_faq_handoff_contexts.sql',import.meta.url),'utf8'));
   db.batch=async(statements)=>{sqlite.exec('BEGIN');try{const results=[];for(const s of statements)results.push(await s.run());sqlite.exec('COMMIT');return results as any;}catch(e){sqlite.exec('ROLLBACK');throw e;}};
 });
 afterEach(()=>sqlite.close());

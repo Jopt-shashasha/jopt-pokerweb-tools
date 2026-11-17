@@ -1,0 +1,30 @@
+[
+  {
+    "results": [
+      {
+        "account_id": "9ff322c4-32e5-4afc-a361-006361c1f503",
+        "audience": "test",
+        "release_id": "faq_03a0e719fb57488b8f9e38e1e3bb1f6e",
+        "test_open": 0
+      }
+    ],
+    "success": true,
+    "meta": {
+      "served_by": "v3-prod",
+      "served_by_region": "APAC",
+      "served_by_colo": "KIX",
+      "served_by_primary": true,
+      "timings": {
+        "sql_duration_ms": 0.2207
+      },
+      "duration": 0.2207,
+      "changes": 0,
+      "last_row_id": 0,
+      "changed_db": false,
+      "size_after": 4829184,
+      "rows_read": 1,
+      "rows_written": 0,
+      "total_attempts": 1
+    }
+  }
+]
