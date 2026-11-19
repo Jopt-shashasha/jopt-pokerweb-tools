@@ -6,6 +6,7 @@ import { digest } from './storage.js';
 import { imageType,httpUrl } from './validation.js';
 import type { BlobStore } from './storage.js';
 import { now } from './model.js';
+import { indexResource } from './discovery.js';
 
 interface ImportedEntry {source_system:string;source_id:string;title:string;creator_email:string;creator_source_id:string;source_publication_status:string;source_visibility:string;source_created_at:number;source_updated_at:number;target_url:string|null;local_files:{path:string;sha256:string}[];file_manifest:unknown[];[key:string]:unknown}
 export async function importDrop(store:Store,blobs:BlobStore,backupPath:string,reportDir:string){
@@ -38,7 +39,7 @@ export async function importDrop(store:Store,blobs:BlobStore,backupPath:string,r
   }
   let inserted=0,skipped=0;
   store.transaction(()=>{
-   for(let i=0;i<departments.length;i++){const d=departments[i];store.run('INSERT INTO departments VALUES (?,?,?) ON CONFLICT(id) DO NOTHING',d.id,d.name,i);}
+   for(let i=0;i<departments.length;i++){const d=departments[i];store.run('INSERT INTO departments(id,name,sort_order) VALUES (?,?,?) ON CONFLICT(id) DO NOTHING',d.id,d.name,i);}
    for(const e of entries){
     if(store.one('SELECT id FROM resources WHERE source_system=? AND source_id=?','drop',e.source_id)){skipped++;continue;}
     let user=store.one<{id:string;google_sub:string|null}>('SELECT id,google_sub FROM users WHERE email=?',e.creator_email);
@@ -53,7 +54,8 @@ export async function importDrop(store:Store,blobs:BlobStore,backupPath:string,r
     const visibility=state==='published'&&e.source_visibility==='public'?'company':'private';
     const id=randomUUID();
     store.run(`INSERT INTO resources(id,source_system,source_id,title,creator_id,url,status,visibility,html_blob,preview_blob,original_filename,source_metadata,created_at,updated_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,id,'drop',e.source_id,e.title,user.id,e.target_url,state,visibility,p.html,p.image,String(e.entry_path??''),JSON.stringify(e),new Date(e.source_created_at*1000).toISOString(),new Date(e.source_updated_at*1000).toISOString());inserted++;
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,id,'drop',e.source_id,e.title,user.id,e.target_url,state,visibility,p.html,p.image,String(e.entry_path??''),JSON.stringify(e),new Date(e.source_created_at*1000).toISOString(),new Date(e.source_updated_at*1000).toISOString());
+    indexResource(store,id);inserted++;
    }
    store.run('INSERT INTO audit VALUES (?,?,?,?,?,?)',randomUUID(),null,'import-drop',null,JSON.stringify({backup:root,inserted,skipped,source_exported_at:data.exported_at,classification:'Not inferred'}),now());
   });

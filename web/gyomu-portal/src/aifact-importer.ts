@@ -5,6 +5,7 @@ import { Store } from './db.js';
 import { digest,type BlobStore } from './storage.js';
 import { httpUrl,imageType } from './validation.js';
 import { now } from './model.js';
+import { indexResource } from './discovery.js';
 
 type Entry={source_system:'aifact';source_id:string;title:string;creator_email:string;creator_source_id:string;creator_name:string;department:{id:string|null;name:string}|null;categories:string[];description:string;target_url:string;source_publication_status:string;source_visibility:null;source_created_at:string;source_updated_at:string;local_preview_image:string;preview_image_sha256:string};
 const dateOnly=(value:string)=>{if(!/^\d{4}\/\d{2}\/\d{2}$/.test(value))throw Error('Unsupported AIFACT source date');const iso=value.replaceAll('/','-'),date=new Date(iso+'T00:00:00Z');if(date.toISOString().slice(0,10)!==iso)throw Error('Invalid AIFACT date');return iso;};
@@ -45,7 +46,7 @@ export async function importAifact(store:Store,blobs:BlobStore,backupPath:string
     store.run('INSERT INTO source_identities VALUES (?,?,?) ON CONFLICT DO NOTHING','aifact',e.creator_source_id,user.id);
     const id=randomUUID();store.run(`INSERT INTO resources(id,source_system,source_id,title,description,creator_id,department_id,url,status,visibility,preview_blob,source_metadata,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,id,'aifact',e.source_id,e.title,e.description,user.id,e.department?.id??null,e.target_url,'published','company',staged.get(e.source_id)!,JSON.stringify(e),dateOnly(e.source_created_at),dateOnly(e.source_updated_at));
     for(const category of new Set(e.categories)){store.run('INSERT INTO categories(name) VALUES (?) ON CONFLICT DO NOTHING',category);store.run('INSERT INTO resource_categories VALUES (?,?)',id,category);}
-    inserted++;
+    indexResource(store,id);inserted++;
    }
    store.run('INSERT INTO audit VALUES (?,?,?,?,?,?)',randomUUID(),null,'import-aifact',null,JSON.stringify({backup:root,inserted,skipped,source_exported_at:data.exported_at,classification:'Original departments/categories only; kind and tags not inferred'}),now());
   });

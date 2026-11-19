@@ -1,0 +1,28 @@
+{
+  "verified_on": "2026-11-19",
+  "timezone": "Asia/Tokyo",
+  "workspace_name": "JOPT",
+  "workspace_id": "T089X4N982U",
+  "app_id": "A0CK1S242B0",
+  "source": "Connected Slack channel search, non-archived channels",
+  "default_sending_enabled": false,
+  "rollout_status": "setup_only_pending_leadership_decision",
+  "delivery_policy": {
+    "destinations_approved": false,
+    "identified_channels_are_candidates_only": true,
+    "audience_destination_frequency": "undecided",
+    "leave_unconfirmed_channels_empty": true
+  },
+  "channels": [
+    {"department":"カスタマー","department_id":"10000000-0000-4000-8000-000000000005","channel_name":"cs_カスタマーチーム","channel_id":"C0924RS04CU","status":"identified","sending_enabled":false},
+    {"department":"トーナメント","department_id":"10000000-0000-4000-8000-000000000010","channel_name":"tn_トーナメントチーム","channel_id":"C091C2QEVMM","status":"identified","sending_enabled":false},
+    {"department":"メディア","department_id":"10000000-0000-4000-8000-000000000011","channel_name":"med_メディアチーム","channel_id":"C08C76BHWVC","status":"identified","sending_enabled":false},
+    {"department":"クリエイティブ","department_id":"10000000-0000-4000-8000-000000000003","channel_name":"cre_クリエイティブチーム","channel_id":"C08J1BKUUVA","status":"identified","sending_enabled":false},
+    {"department":"ロジスティックス","department_id":"10000000-0000-4000-8000-000000000012","channel_name":"log_ロジスティックスチーム","channel_id":"C08SLSPSXB8","status":"identified","sending_enabled":false},
+    {"department":"マーケティング","department_id":"10000000-0000-4000-8000-000000000002","channel_name":"mk_マーケティングチーム","channel_id":"C08HVLEUSBF","status":"identified","sending_enabled":false},
+    {"department":"営業","department_id":"10000000-0000-4000-8000-000000000001","channel_name":"sl_営業部","channel_id":"C08J13CPT8U","status":"identified","sending_enabled":false},
+    {"department":"インフルエンサー","department_id":"10000000-0000-4000-8000-000000000013","channel_name":"mk_インフルエンサー","channel_id":"C09106Q8J4Q","status":"identified","sending_enabled":false},
+    {"department":"ディレクター","department_id":"10000000-0000-4000-8000-000000000009","channel_name":null,"channel_id":null,"status":"confirmation_required","sending_enabled":false,"candidates":[{"channel_name":"joptディレクター教育","channel_id":"C093331JAQY","reason":"教育用のため、通常業務の配信先とは断定しない"},{"channel_name":"ai_director","channel_id":"C0C4ERFEWCS","reason":"推進用チャンネルであり、通常業務の配信先とは断定しない"}]},
+    {"department":"全社用","department_id":null,"channel_name":null,"channel_id":null,"status":"confirmation_required","sending_enabled":false,"candidates":[{"channel_name":"office_イベントチーム","channel_id":"C089M13F08H","reason":"イベントチーム用。全社員向けかは未確認"}]}
+  ]
+}

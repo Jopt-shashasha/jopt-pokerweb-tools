@@ -1,8 +1,9 @@
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import { readFileSync, readdirSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+import type { Database, Statement } from './database.js';
 
-export class Store {
+export class Store implements Database {
  readonly db: DatabaseSync;
  private depth=0;
  constructor(filename: string) {
@@ -20,6 +21,9 @@ export class Store {
  one<T = Record<string, unknown>>(sql: string, ...values: SQLInputValue[]): T | undefined { return this.db.prepare(sql).get(...values) as T | undefined; }
  all<T = Record<string, unknown>>(sql: string, ...values: SQLInputValue[]): T[] { return this.db.prepare(sql).all(...values) as T[]; }
  run(sql: string, ...values: SQLInputValue[]) { return this.db.prepare(sql).run(...values); }
+ batch(statements: readonly Statement[]) {
+  this.transaction(() => { for (const [sql,...parameters] of statements) this.run(sql,...parameters); });
+ }
  transaction<T>(fn: () => T): T {
   const nested=this.depth>0,savepoint=`portal_sp_${this.depth}`;
   this.db.exec(nested?`SAVEPOINT ${savepoint}`:'BEGIN IMMEDIATE');this.depth++;

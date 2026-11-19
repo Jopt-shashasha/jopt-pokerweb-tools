@@ -25,53 +25,57 @@ function fixture(){
  return {store,catalog:new Catalog(store),admin:add('admin@japanopenpoker.com','admin'),a:add('a@japanopenpoker.com','user'),b:add('b@japanopenpoker.com','user')};
 }
 const input=(title:string,extra:Record<string,unknown>={})=>({title,url:'https://example.com/resource',...extra});
-test('registered source URL remains the entry when a retained HTML preview exists',()=>{
+test('registered source URL remains the entry when a retained HTML preview exists',async ()=>{
  const {store,catalog,a}=fixture();try{
-  const external=catalog.create(a,input('Drive archive',{url:'https://drive.google.com/file/d/source/view'}),{blob:'retained-preview',filename:'source.html',bytes:10,sha256:'source-hash'});
-  assert.equal(external.open_url,'https://drive.google.com/file/d/source/view');assert.equal(external.has_html,true);
-  const legacy=catalog.create(a,{title:'Unmigrated local draft',url:null},{blob:'local-preview',filename:'draft.html',bytes:10,sha256:'draft-hash'});
-  assert.equal(legacy.open_url,`/preview/${legacy.id}`);
+  const external=(await catalog.create(a,input('Drive archive',{url:'https://drive.google.com/file/d/source/view'})));
+  const legacy=(await catalog.create(a,input('Unmigrated local draft',{status:'draft'})));
+  store.run('UPDATE resources SET html_blob=? WHERE id=?','retained-preview',external.id);
+  store.run('UPDATE resources SET url=NULL,html_blob=? WHERE id=?','local-preview',legacy.id);
+  const withLink=catalog.view((await catalog.get(external.id,a)),a);
+  assert.equal(withLink.open_url,'https://drive.google.com/file/d/source/view');
+  assert.equal(withLink.has_html,true);
+  assert.equal(catalog.view((await catalog.get(legacy.id,a)),a).open_url,'/preview/'+legacy.id);
  }finally{store.close();}
 });
-test('authorization applies to detail, search, counts, saved and recommendations',()=>{
+test('authorization applies to detail, search, counts, saved and recommendations',async ()=>{
  const {store,catalog,admin,a,b}=fixture();try{
-  const pub=catalog.create(a,input('shared'));
-  const privateDoc=catalog.create(a,input('private-secret',{visibility:'private'}));
-  const draft=catalog.create(a,input('draft-secret',{status:'draft'}));
-  assert.equal(catalog.list(b,new URLSearchParams()).total,1);
-  assert.equal(catalog.list(b,new URLSearchParams({q:'secret'})).total,0);
-  assert.throws(()=>catalog.get(privateDoc.id,b),/資料が見つかりません/);
-  assert.throws(()=>catalog.save(draft.id,b,true),/資料が見つかりません/);
-  assert.equal(catalog.list(admin,new URLSearchParams()).total,3);
-  for(let i=0;i<10;i++)assert.deepEqual(catalog.pickup(admin).map(r=>r.id),[pub.id]);
-  catalog.save(pub.id,b,true);catalog.save(pub.id,b,true);
-  assert.equal(catalog.list(b,new URLSearchParams({collection:'saved'})).total,1);
-  catalog.save(pub.id,b,false);assert.equal(catalog.list(b,new URLSearchParams({collection:'saved'})).total,0);
+  const pub=(await catalog.create(a,input('shared')));
+  const privateDoc=(await catalog.create(a,input('private-secret',{visibility:'private'})));
+  const draft=(await catalog.create(a,input('draft-secret',{status:'draft'})));
+  assert.equal((await catalog.list(b,new URLSearchParams())).total,1);
+  assert.equal((await catalog.list(b,new URLSearchParams({q:'secret'}))).total,0);
+  await assert.rejects(()=>catalog.get(privateDoc.id,b),/資料が見つかりません/);
+  await assert.rejects(()=>catalog.save(draft.id,b,true),/資料が見つかりません/);
+  assert.equal((await catalog.list(admin,new URLSearchParams())).total,3);
+  for(let i=0;i<10;i++)assert.deepEqual((await catalog.pickup(admin)).map(r=>r.id),[pub.id]);
+  (await catalog.save(pub.id,b,true));(await catalog.save(pub.id,b,true));
+  assert.equal((await catalog.list(b,new URLSearchParams({collection:'saved'}))).total,1);
+  (await catalog.save(pub.id,b,false));assert.equal((await catalog.list(b,new URLSearchParams({collection:'saved'}))).total,0);
  }finally{store.close();}
 });
-test('only administrator can assign creator; actor and original source identity remain distinct',()=>{
+test('only administrator can assign creator; actor and original source identity remain distinct',async ()=>{
  const {store,catalog,admin,a,b}=fixture();try{
-  assert.throws(()=>catalog.create(a,input('bad',{creator_id:b.id})),/管理者/);
-  const delegated=catalog.create(admin,input('delegated',{creator_id:a.id}));
+  await assert.rejects(()=>catalog.create(a,input('bad',{creator_id:b.id})),/管理者/);
+  const delegated=(await catalog.create(admin,input('delegated',{creator_id:a.id})));
   assert.equal(delegated.creator_id,a.id);assert.equal(delegated.registered_by,admin.id);
-  assert.throws(()=>catalog.update(delegated.id,a,input('bad',{creator_id:b.id,version:delegated.version})),/管理者/);
-  assert.throws(()=>catalog.update(delegated.id,b,input('bad',{version:delegated.version})),/編集/);
-  assert.throws(()=>catalog.update(delegated.id,admin,input('bad',{version:99})),/更新/);
-  const changed=catalog.update(delegated.id,admin,input('changed',{creator_id:b.id,version:delegated.version}));
+  await assert.rejects(()=>catalog.update(delegated.id,a,input('bad',{creator_id:b.id,version:delegated.version})),/管理者/);
+  await assert.rejects(()=>catalog.update(delegated.id,b,input('bad',{version:delegated.version})),/編集/);
+  await assert.rejects(()=>catalog.update(delegated.id,admin,input('bad',{version:99})),/更新/);
+  const changed=(await catalog.update(delegated.id,admin,input('changed',{creator_id:b.id,version:delegated.version})));
   assert.equal(changed.creator_id,b.id);assert.equal(changed.registered_by,admin.id);
   assert.equal(store.one<{actor_id:string}>('SELECT actor_id FROM audit WHERE action=?','update')?.actor_id,admin.id);
-  assert.throws(()=>catalog.create(admin,input('role injection',{role:'admin'})),/role/);
+  await assert.rejects(()=>catalog.create(admin,input('role injection',{role:'admin'})),/role/);
  }finally{store.close();}
 });
-test('verified Google Workspace identities claim imported records without accepting changed subjects',()=>{
+test('verified Google Workspace identities claim imported records without accepting changed subjects',async ()=>{
  const {store,a}=fixture();try{
   const auth=new Auth(store,config);
   const claims={email:a.email,email_verified:true,hd:'japanopenpoker.com',sub:'stable-google-sub'};
-  assert.equal(auth.verifiedUser(claims).id,a.id);
-  assert.throws(()=>auth.verifiedUser({...claims,sub:'different-sub'}),/確認/);
-  assert.throws(()=>auth.verifiedUser({...claims,email_verified:false}),/会社/);
-  assert.throws(()=>auth.verifiedUser({...claims,hd:'example.com'}),/会社/);
-  assert.throws(()=>auth.verifiedUser({...claims,email:'outside@gmail.com',hd:'gmail.com'}),/会社/);
+  assert.equal((await auth.verifiedUser(claims)).id,a.id);
+  await assert.rejects(()=>auth.verifiedUser({...claims,sub:'different-sub'}),/確認/);
+  await assert.rejects(()=>auth.verifiedUser({...claims,email_verified:false}),/会社/);
+  await assert.rejects(()=>auth.verifiedUser({...claims,hd:'example.com'}),/会社/);
+  await assert.rejects(()=>auth.verifiedUser({...claims,email:'outside@gmail.com',hd:'gmail.com'}),/会社/);
  }finally{store.close();}
 });
 test('HTTP routes reject anonymous reads, CSRF, host spoofing and unauthorized preview bytes',async()=>{
@@ -85,14 +89,35 @@ test('HTTP routes reject anonymous reads, CSRF, host spoofing and unauthorized p
   const cookie='__Host-portal-session='+token;
   assert.equal((await request('/api/resources',{method:'POST',headers:{cookie,'content-type':'application/json'},body:JSON.stringify(input('no csrf'))})).status,403);
   assert.equal((await request('/api/resources',{method:'POST',headers:{cookie,origin:'https://evil.test','x-csrf-token':csrf,'content-type':'application/json'},body:JSON.stringify(input('bad origin'))})).status,403);
-  const privateDoc=catalog.create(a,input('private',{visibility:'private'}));
+  const privateDoc=(await catalog.create(a,input('private',{visibility:'private'})));
   assert.equal((await request('/api/resources/'+privateDoc.id+'/preview-image',{headers:{cookie}})).status,404);
   const adminToken='admin-session';store.run('INSERT INTO sessions(token_hash,user_id,csrf,expires_at,created_at,renewed_at) VALUES (?,?,?,?,?,?)',digest(adminToken),admin.id,csrf,t+1000,t,t);
   const headers={cookie:'__Host-portal-session='+adminToken,origin:config.origin,'x-csrf-token':csrf};
-  const fd=new FormData();fd.append('metadata',JSON.stringify({title:'test HTML',creator_id:a.id}));fd.append('file',new File(['<!doctype html><script>parent.document.body.textContent="bad"</script>'],'sample.html',{type:'text/html'}));
-  const upload=await request('/api/resources/html',{method:'POST',headers,body:fd});assert.equal(upload.status,201);const resource=await upload.json() as {id:string;status:string};assert.equal(resource.status,'draft');
-  const html=await request('/api/resources/'+resource.id+'/content',{headers});assert.equal(html.status,200);assert.match(html.headers.get('content-security-policy')??'',/sandbox allow-scripts/);assert.doesNotMatch(html.headers.get('content-security-policy')??'',/allow-same-origin/);
-  assert.equal((await request('/api/resources/'+resource.id+'/preview-image',{method:'PUT',headers,body:'<svg onload="alert(1)"/>'})).status,415);
+  const fd=new FormData();
+  fd.append('file',new File(['<!doctype html><h1>Legacy</h1>'],'sample.html',{type:'text/html'}));
+  const countBefore=store.one<{n:number}>('SELECT COUNT(*) n FROM resources')!.n;
+  for(const path of ['/api/resources/html','/api/resources/upload']){
+   assert.equal((await request(path,{method:'POST',headers,body:fd})).status,404);
+  }
+  const create=(body:unknown)=>request('/api/resources',{method:'POST',headers:{...headers,'content-type':'application/json'},body:JSON.stringify(body)});
+  for(const invalid of [{title:'Missing URL'},{title:'Local file',url:'file:///C:/sample.html'},{title:'Attachment',url:'https://example.com/doc',markdown:{filename:'README.md',content:'# Legacy'}}]){
+   assert.equal((await create(invalid)).status,400);
+  }
+  assert.equal(store.one<{n:number}>('SELECT COUNT(*) n FROM resources')!.n,countBefore);
+  const created=await create({title:'Published HTML',url:'https://example.com/handbook.html',description:'First steps'});
+  assert.equal(created.status,201);
+  const resource=await created.json() as {id:string;open_url:string;has_html:boolean;version:number};
+  assert.equal(resource.open_url,'https://example.com/handbook.html');
+  assert.equal(resource.has_html,false);
+  const invalidEdit=await request('/api/resources/'+resource.id,{method:'PUT',headers:{...headers,'content-type':'application/json'},body:JSON.stringify({title:'Published HTML',url:null,version:resource.version})});
+  assert.equal(invalidEdit.status,400);
+  assert.equal((await request('/api/resources/'+resource.id+'/preview-image',{method:'PUT',headers,body:'image'})).status,404);
+  const legacy=await blobs.put(new TextEncoder().encode('<h1>Legacy</h1>'));
+  store.run('UPDATE resources SET url=NULL,html_blob=? WHERE id=?',legacy,resource.id);
+  const html=await request('/api/resources/'+resource.id+'/content',{headers});
+  assert.equal(html.status,200);
+  assert.match(html.headers.get('content-security-policy')??'',/sandbox allow-scripts/);
+  assert.doesNotMatch(html.headers.get('content-security-policy')??'',/allow-same-origin/);
  }finally{store.close();await rm(dir,{recursive:true,force:true});}
 });
 test('drop import is idempotent, retains creators/privacy and never guesses document classification',async()=>{

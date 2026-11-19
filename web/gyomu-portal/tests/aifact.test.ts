@@ -33,9 +33,9 @@ test('AIFACT import preserves original categories, creator identity, preview byt
   assert.equal(f.store.one<{user_id:string}>("SELECT user_id FROM source_identities WHERE source_system='aifact'")?.user_id,f.owner);
   assert.equal(digest(await f.blobs.get(rows[0].preview_blob)),f.entry.preview_image_sha256);
   const user=f.store.one<User>('SELECT * FROM users WHERE id=?',f.owner)!;
-  assert.deepEqual(f.catalog.view(f.catalog.get(rows[0].id,user),user).categories.sort(),['別カテゴリ','原カテゴリ'].sort());
-  assert.equal(f.catalog.list(user,new URLSearchParams({category:'原カテゴリ'})).total,1);
-  assert.equal(f.catalog.list(user,new URLSearchParams({q:'別カテゴリ'})).total,1);
+  assert.deepEqual(f.catalog.view((await f.catalog.get(rows[0].id,user)),user).categories.sort(),['別カテゴリ','原カテゴリ'].sort());
+  assert.equal((await f.catalog.list(user,new URLSearchParams({category:'原カテゴリ'}))).total,1);
+  assert.equal((await f.catalog.list(user,new URLSearchParams({q:'別カテゴリ'}))).total,1);
   f.store.run('UPDATE resources SET title=? WHERE id=?','編集後のタイトル',rows[0].id);
   const again=await importAifact(f.store,f.blobs,f.dir,resolve(f.dir,'reports'));assert.equal(again.inserted,0);assert.equal(again.skipped,2);assert.equal(f.blobsData.size,2);
   assert.equal(f.store.one<{title:string}>('SELECT title FROM resources WHERE id=?',rows[0].id)?.title,'編集後のタイトル');
@@ -46,9 +46,9 @@ test('AIFACT category counts/search do not expose private records to another acc
  const f=await fixture();try{
   await f.write([f.entry]);await importAifact(f.store,f.blobs,f.dir,resolve(f.dir,'reports'));
   f.store.run("UPDATE resources SET visibility='private'");const user=f.store.one<User>('SELECT * FROM users WHERE id=?',f.other)!;
-  assert.equal(f.catalog.list(user,new URLSearchParams({category:'原カテゴリ'})).total,0);
-  assert.equal(f.catalog.list(user,new URLSearchParams({q:'原カテゴリ'})).total,0);
-  assert.deepEqual(f.catalog.masters(user).categories,[]);
+  assert.equal((await f.catalog.list(user,new URLSearchParams({category:'原カテゴリ'}))).total,0);
+  assert.equal((await f.catalog.list(user,new URLSearchParams({q:'原カテゴリ'}))).total,0);
+  assert.deepEqual((await f.catalog.masters(user)).categories,[]);
  }finally{await f.cleanup();}
 });
 

@@ -5,13 +5,15 @@ export interface Resource {
  event: string | null; edition: string | null; event_scope_id:string|null; event_scope_name?:string|null; tags: string; url: string | null;
  status: 'draft' | 'published' | 'archived'; visibility: 'company' | 'private';
  access_request: number; publisher_slack_id: string | null; preview_blob: string | null; html_blob: string | null;
- original_filename: string | null; source_metadata: string; version: number; created_at: string; updated_at: string;
+ original_filename: string | null; source_metadata: string; impact?: string | null; version: number; created_at: string; updated_at: string;
  creator_name?: string; creator_email?: string; department_name?: string; is_saved?: number;
  categories?: string;
 }
 export interface Config {
  origin: string; localDev: boolean; dataDir: string; adminEmail: string; allowedDomains: string[];
  googleClientId?: string; googleClientSecret?: string; newsFeeds: string[];
+ mcpPath?: string;
+ slackBotToken?: string; slackWorkspaceUrl?: string;
 }
 export const now = () => new Date().toISOString();
 export const epoch = () => Math.floor(Date.now() / 1000);

@@ -9,21 +9,26 @@ import {Previews} from '../src/previews.js';
 import {LocalPreviewRenderer} from '../src/preview-renderer.js';
 import {digest,type BlobStore} from '../src/storage.js';
 import {imageType} from '../src/validation.js';
-import {saveMarkdown,stageMarkdown} from '../src/markdown.js';
 import {now,type User} from '../src/model.js';
 import {createApp} from '../src/app.js';
 
 function fixture(){const store=new Store(':memory:'),data=new Map<string,Uint8Array<ArrayBuffer>>(),catalog=new Catalog(store);const id=randomUUID();store.run('INSERT INTO users(id,email,name,role,created_at) VALUES (?,?,?,?,?)',id,'a@japanopenpoker.com','a','user',now());const user=store.one<User>('SELECT * FROM users WHERE id=?',id)!;const blobs:BlobStore={put:async b=>{const id=randomUUID();data.set(id,new Uint8Array(b));return id;},get:async id=>data.get(id)!,remove:async id=>{data.delete(id);}};return {store,catalog,user,blobs};}
-test('file previews coalesce requests, cache by content and regenerate after Markdown replacement',async()=>{
- const f=fixture();try{const r=f.catalog.create(f.user,{title:'Readme',url:'https://example.com/'});const md=await stageMarkdown(f.blobs,{filename:'README.md',content:'# Original\n\nFirst body'});saveMarkdown(f.store,r.id,md!,f.user.id);let count=0;
+test('file previews coalesce requests, cache by content and honor different legacy Markdown content',async()=>{
+ const f=fixture();try{const r=(await f.catalog.create(f.user,{title:'Readme',url:'https://example.com/'}));const first=new TextEncoder().encode('# Original\n\nFirst body');
+  const original=await f.blobs.put(first);
+  f.store.run('INSERT INTO resource_markdown VALUES (?,?,?,?,?,?,?,?)',r.id,original,'README.md',first.byteLength,digest(first),'First body',f.user.id,now());
+  let count=0;
   const service=new Previews(f.store,f.blobs,{render:async html=>{count++;assert.ok(html.includes('body'));return new Uint8Array([255,216,255,count]);}});
-  const resource=f.catalog.get(r.id,f.user);await Promise.all([service.get(resource),service.get(resource)]);assert.equal(count,1);await service.get(resource);assert.equal(count,1);
-  const replacement=await stageMarkdown(f.blobs,{filename:'README.md',content:'# Replacement\n\nSecond body'});saveMarkdown(f.store,r.id,replacement!,f.user.id);await service.get(resource);assert.equal(count,2);assert.equal(f.catalog.get(r.id,f.user).preview_blob,null);
+  const resource=(await f.catalog.get(r.id,f.user));await Promise.all([service.get(resource),service.get(resource)]);assert.equal(count,1);await service.get(resource);assert.equal(count,1);
+  const second=new TextEncoder().encode('# Replacement\n\nSecond body');
+  const replacement=await f.blobs.put(second);
+  f.store.run('UPDATE resource_markdown SET blob=?,bytes=?,sha256=? WHERE resource_id=?',replacement,second.byteLength,digest(second),r.id);
+  await service.get(resource);assert.equal(count,2);assert.equal((await f.catalog.get(r.id,f.user)).preview_blob,null);
  }finally{f.store.close();}
 });
 test('a URL alone is never fetched for preview generation and render failures keep the document usable',async()=>{
- const f=fixture();try{const r=f.catalog.create(f.user,{title:'URL',url:'http://127.0.0.1/private'});let count=0;const service=new Previews(f.store,f.blobs,{render:async()=>{count++;throw Error('unavailable');}});assert.equal(await service.get(f.catalog.get(r.id,f.user)),null);assert.equal(count,0);
-  const bytes=new TextEncoder().encode('<h1>Document</h1>'),blob=await f.blobs.put(bytes);f.store.run('INSERT INTO resource_preview_inputs VALUES (?,?,?,?)',r.id,blob,'index.html',digest(bytes));assert.equal(await service.get(f.catalog.get(r.id,f.user)),null);assert.equal(await service.get(f.catalog.get(r.id,f.user)),null);assert.equal(count,1);assert.equal(f.catalog.get(r.id,f.user).title,'URL');
+ const f=fixture();try{const r=(await f.catalog.create(f.user,{title:'URL',url:'http://127.0.0.1/private'}));let count=0;const service=new Previews(f.store,f.blobs,{render:async()=>{count++;throw Error('unavailable');}});assert.equal(await service.get((await f.catalog.get(r.id,f.user))),null);assert.equal(count,0);
+  const bytes=new TextEncoder().encode('<h1>Document</h1>'),blob=await f.blobs.put(bytes);f.store.run('INSERT INTO resource_preview_inputs VALUES (?,?,?,?)',r.id,blob,'index.html',digest(bytes));assert.equal(await service.get((await f.catalog.get(r.id,f.user))),null);assert.equal(await service.get((await f.catalog.get(r.id,f.user))),null);assert.equal(count,1);assert.equal((await f.catalog.get(r.id,f.user)).title,'URL');
  }finally{f.store.close();}
 });
 test('real file renderer blocks scripts and outbound requests in a fresh offline browser',async t=>{
@@ -36,7 +41,7 @@ test('real file renderer blocks scripts and outbound requests in a fresh offline
 });
 test('thumbnail generation follows document permissions and preserves an existing uploaded image',async()=>{
  const f=fixture();try{
-  const r=f.catalog.create(f.user,{title:'private',url:'https://example.com/',visibility:'private'}),other=randomUUID(),epoch=Math.floor(Date.now()/1000);
+  const r=(await f.catalog.create(f.user,{title:'private',url:'https://example.com/',visibility:'private'})),other=randomUUID(),epoch=Math.floor(Date.now()/1000);
   f.store.run('INSERT INTO users(id,email,name,role,created_at) VALUES (?,?,?,?,?)',other,'other@japanopenpoker.com','other','user',now());
   for(const [token,id] of [['owner-token',f.user.id],['other-token',other]])f.store.run('INSERT INTO sessions(token_hash,user_id,csrf,expires_at,created_at,renewed_at) VALUES (?,?,?,?,?,?)',digest(token),id,'csrf',epoch+1000,epoch,epoch);
   const html=new TextEncoder().encode('<h1>private document</h1>');f.store.run('INSERT INTO resource_preview_inputs VALUES (?,?,?,?)',r.id,await f.blobs.put(html),'file.html',digest(html));

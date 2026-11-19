@@ -1,7 +1,10 @@
 import { load } from 'cheerio';
 import { HTTPException } from 'hono/http-exception';
-import { Store } from './db.js';
-import type { BlobStore } from './storage.js';
+import type { Store } from './db.js';
+import type { Statement } from './database.js';
+import type { BlobStore } from './blob-store.js';
+import type { ReaderGuide } from './reader.js';
+import { parseStoredImpact, type Impact } from './impact.js';
 import { now } from './model.js';
 
 export const SEARCH_BODY_LIMIT=120000;
@@ -19,17 +22,32 @@ export function htmlText(html:string){
  const $=load(html.slice(0,2*1024*1024));$('script,style,noscript,template,iframe,svg,canvas,[hidden],[aria-hidden="true"]').remove();
  const body=$('main,article').first();return (body.length?body:$('body')).text().replace(/\s+/g,' ').trim().slice(0,SEARCH_BODY_LIMIT);
 }
+
+export function searchIndex(id: string, data: {
+ title: string; description: string; impact: Impact | null; creator: string; email: string;
+ department: string | null; events: { event: string; name: string | null }[];
+ edition: string | null; tags: string[]; categories: string[]; guide: ReaderGuide | null;
+ body: string; markdown: string;
+}): Statement {
+ const { title,description,impact,creator,email,department,events,edition,tags,categories,guide,markdown } = data;
+ const body = data.body.slice(0,SEARCH_BODY_LIMIT);
+ const guideText = guide ? [guide.summary,...guide.requirements,...guide.steps,...(guide.key_points??[]),...guide.notes,...guide.related_links.map(x=>x.label)].join(' ') : '';
+ const metadata = [title,description,impact?.audience,impact?.task,creator,email,department,...events.flatMap(e=>[e.event,e.name]),edition,...tags,...categories].filter(Boolean).join(' ');
+ return [`INSERT INTO resource_search(resource_id,body,normalized_text,normalized_title,normalized_summary,updated_at) VALUES (?,?,?,?,?,?)
+  ON CONFLICT(resource_id) DO UPDATE SET body=excluded.body,normalized_text=excluded.normalized_text,normalized_title=excluded.normalized_title,normalized_summary=excluded.normalized_summary,updated_at=excluded.updated_at`,
+  id,body,normalizeText([metadata,body,markdown,guideText].join(' ')),normalizeText(title),normalizeText(guide?.summary??description),now()];
+}
+
 export function indexResource(store:Store,id:string,body?:string){
  const r=store.one<any>(`SELECT r.*,u.name creator_name,u.email creator_email,d.name department_name,s.name scope_name FROM resources r JOIN users u ON u.id=r.creator_id LEFT JOIN departments d ON d.id=r.department_id LEFT JOIN event_scopes s ON s.id=r.event_scope_id WHERE r.id=?`,id);if(!r)return;
  const previous=store.one<{body:string}>('SELECT body FROM resource_search WHERE resource_id=?',id);
  const source=JSON.parse(r.source_metadata),base=(body??previous?.body??(typeof source.detail_text==='string'?source.detail_text:'')).slice(0,SEARCH_BODY_LIMIT);
  const markdown=store.one<{search_text:string}>('SELECT search_text FROM resource_markdown WHERE resource_id=?',id)?.search_text??'';
  const guideRow=store.one<{content:string}>('SELECT content FROM resource_reader_guides WHERE resource_id=?',id),guide=guideRow?JSON.parse(guideRow.content):null;
- const guideText=guide?[guide.summary,...guide.requirements,...guide.steps,...(guide.key_points??[]),...guide.notes,...guide.related_links.map((x:{label:string})=>x.label)].join(' '):'';
  const cats=store.all<{category_name:string}>('SELECT category_name FROM resource_categories WHERE resource_id=?',id).map(c=>c.category_name);
  const events=store.all<{event:string;name:string|null}>('SELECT re.event,s.name FROM resource_events re LEFT JOIN event_scopes s ON s.id=re.event_scope_id WHERE re.resource_id=?',id);
- const metadata=[r.title,r.description,r.creator_name,r.creator_email,r.department_name,...events.flatMap(e=>[e.event,e.name]),r.edition,...JSON.parse(r.tags),...cats].filter(Boolean).join(' ');
- store.run(`INSERT INTO resource_search(resource_id,body,normalized_text,normalized_title,normalized_summary,updated_at) VALUES (?,?,?,?,?,?) ON CONFLICT(resource_id) DO UPDATE SET body=excluded.body,normalized_text=excluded.normalized_text,normalized_title=excluded.normalized_title,normalized_summary=excluded.normalized_summary,updated_at=excluded.updated_at`,id,base,normalizeText(metadata+' '+base+' '+markdown+' '+guideText),normalizeText(r.title),normalizeText(guide?.summary??r.description),now());
+ const [sql,...values]=searchIndex(id,{title:r.title,description:r.description,impact:parseStoredImpact(r.impact),creator:r.creator_name,email:r.creator_email,department:r.department_name,events,edition:r.edition,tags:JSON.parse(r.tags),categories:cats,guide,body:base,markdown});
+ store.run(sql,...values);
 }
 export function ensureSearchIndex(store:Store){for(const r of store.all<{id:string}>('SELECT id FROM resources WHERE id NOT IN (SELECT resource_id FROM resource_search)'))indexResource(store,r.id);}
 export async function rebuildSearch(store:Store,blobs:BlobStore){

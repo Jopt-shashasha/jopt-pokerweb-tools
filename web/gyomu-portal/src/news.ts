@@ -1,6 +1,6 @@
 import { XMLParser } from 'fast-xml-parser';
 import { load } from 'cheerio';
-import { Store } from './db.js';
+import type { Database } from './database.js';
 import { epoch } from './model.js';
 export interface NewsItem {title:string;url:string;source:string;published_at:string|null;summary?:string;format?:'story'|'article';source_url?:string;digest_url?:string}
 // Temporary editorial scope while feed providers are still under discussion.
@@ -43,13 +43,13 @@ export function parseNewsFeed(text:string,feedUrl:string):NewsItem[]{
 }
 export class News {
  private inflight?:Promise<{items:NewsItem[];stale:boolean;error:string|null}>;
- constructor(private store:Store,private feeds:string[],private fetcher:typeof fetch=fetch,private clock=epoch){}
+ constructor(private store:Database,private feeds:string[],private fetcher:typeof fetch=fetch,private clock=epoch){}
  async get(){
-  const cached=this.store.one<{payload:string;fetched_at:number}>('SELECT * FROM news_cache WHERE id=1');
+  const cached=await this.store.one<{payload:string;fetched_at:number}>('SELECT * FROM news_cache WHERE id=1');
   const raw=cached?JSON.parse(cached.payload) as NewsItem[]:[],items=raw.filter(isProductNews);
   const compatible=!!cached&&raw.every(n=>typeof n.summary==='string'&&['story','article'].includes(n.format??''));
   if(cached&&compatible&&cached.fetched_at>this.clock()-3600){
-   if(items.length!==raw.length)this.store.run('UPDATE news_cache SET payload=? WHERE id=1',JSON.stringify(items));
+   if(items.length!==raw.length)await this.store.run('UPDATE news_cache SET payload=? WHERE id=1',JSON.stringify(items));
    return {items,stale:false,error:null};
   }
   if(!this.feeds.length)return {items:[],stale:false,error:'ニュース配信元が未設定です。'};
@@ -58,7 +58,9 @@ export class News {
  private async refresh(cached?:{payload:string;fetched_at:number}){
   try {
    const results=await Promise.allSettled(this.feeds.map(async url=>{
-    const response=await this.fetcher(url,{redirect:'error',signal:AbortSignal.timeout(8000),headers:{accept:'application/rss+xml, application/atom+xml, application/xml'}});
+    // Workers (Sites) only support redirect 'follow'/'manual'; 'error' throws. Treat any redirect as a failure.
+    const response=await this.fetcher(url,{redirect:'manual',signal:AbortSignal.timeout(8000),headers:{accept:'application/rss+xml, application/atom+xml, application/xml'}});
+    if(response.status>=300&&response.status<400)throw Error('feed redirected');
     if(!response.ok||!response.body)throw Error('feed unavailable');
     const reader=response.body.getReader();let bytes=0,text='';const decoder=new TextDecoder();
     try{while(true){const chunk=await reader.read();if(chunk.done)break;bytes+=chunk.value.length;if(bytes>2*1024*1024){await reader.cancel();throw Error('feed too large');}text+=decoder.decode(chunk.value,{stream:true});}text+=decoder.decode();}finally{reader.releaseLock();}
@@ -67,7 +69,7 @@ export class News {
    const seen=new Set<string>();
    if(!results.some(r=>r.status==='fulfilled'))throw Error('feeds unavailable');
    const items=results.flatMap(r=>r.status==='fulfilled'?r.value:[]).filter(isProductNews).sort((a,b)=>(b.published_at??'').localeCompare(a.published_at??'')).filter(item=>{const key=item.title.toLowerCase().replace(/\s+/g,'');if(seen.has(key))return false;seen.add(key);return true;}).slice(0,20);
-   this.store.run('INSERT INTO news_cache VALUES (1,?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload,fetched_at=excluded.fetched_at',JSON.stringify(items),this.clock());
+   await this.store.run('INSERT INTO news_cache VALUES (1,?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload,fetched_at=excluded.fetched_at',JSON.stringify(items),this.clock());
    return {items,stale:false,error:null};
   }catch{return {items:cached?JSON.parse(cached.payload) as NewsItem[]:[],stale:!!cached,error:'ニュースを更新できませんでした。'};}
  }

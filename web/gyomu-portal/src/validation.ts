@@ -1,18 +1,19 @@
 import { z } from 'zod';
 import { HTTPException } from 'hono/http-exception';
-import { markdownInput } from './markdown.js';
+import { impactInput } from './impact.js';
 export const httpUrl = z.string().trim().max(4000).refine(s => {
  try { const u = new URL(s); return ['https:', 'http:'].includes(u.protocol) && !u.username && !u.password; } catch { return false; }
 }, 'http(s)のURLを指定してください。');
 export const resourceInput = z.object({
  title: z.string().trim().min(1).max(160), description: z.string().trim().max(12000).default(''),
- url: httpUrl.nullable().default(null), creator_id: z.string().uuid().optional(),
+ url: httpUrl, creator_id: z.string().uuid().optional(),
  department_id: z.string().max(100).nullable().default(null), kind: z.enum(['document','tool']).nullable().default(null),
  event: z.string().trim().max(100).nullable().default(null), edition: z.string().trim().max(100).nullable().default(null),
- event_scope_id:z.string().max(100).nullable().optional(), search_text:z.string().max(120000).optional(), markdown:markdownInput.optional(),
+ event_scope_id:z.string().max(100).nullable().optional(), search_text:z.string().max(120000).optional(),
  events:z.array(z.object({event:z.string().trim().min(1).max(100),event_scope_id:z.string().max(100).nullable().optional()}).strict()).max(20).optional().describe('All relevant tournament tags from portal_registration_options. Multiple tournaments allowed. Scope belongs to that tournament. An empty array explicitly clears tournament tags.'),
  tags: z.array(z.string().trim().min(1).max(60)).max(20).default([]),
  visibility: z.enum(['company','private']).default('company'), status: z.enum(['draft','published','archived']).default('published'),
+ impact: impactInput.nullable().optional(),
  access_request: z.boolean().default(false), version: z.number().int().positive().optional()
 }).strict();
 export function parseResource(value: unknown) {

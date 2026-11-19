@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { readFile as readAsset } from 'node:fs/promises';
 import { serve } from '@hono/node-server';
 import { resolve } from 'node:path';
 import { createApp } from './app.js';
@@ -12,10 +14,18 @@ const url=new URL(origin);if(origin!==url.origin)throw Error('APP_ORIGIN must be
 if(localDev&&(url.protocol!=='http:'||url.hostname!=='127.0.0.1'))throw Error('Local development is restricted to 127.0.0.1');
 if(!localDev&&(url.protocol!=='https:'||!process.env.PORTAL_DATA_DIR))throw Error('Production requires HTTPS APP_ORIGIN and an explicit private PORTAL_DATA_DIR');
 const dataDir=resolve(process.env.PORTAL_DATA_DIR??'.local');
-const config:Config={origin,localDev,dataDir,adminEmail:(process.env.INITIAL_ADMIN_EMAIL??'xiao.h@japanopenpoker.com').toLowerCase(),allowedDomains:(process.env.ALLOWED_GOOGLE_DOMAINS??'japanopenpoker.com,huntersite.jp').split(',').map(v=>v.trim()),googleClientId:process.env.GOOGLE_CLIENT_ID,googleClientSecret:process.env.GOOGLE_CLIENT_SECRET,newsFeeds:(process.env.NEWS_FEED_URLS??'https://www.ml-bear-times.com/rss/').split(',').map(v=>v.trim()).filter(Boolean)};
+const config:Config={origin,localDev,dataDir,adminEmail:(process.env.INITIAL_ADMIN_EMAIL??'xiao.h@japanopenpoker.com').toLowerCase(),allowedDomains:(process.env.ALLOWED_GOOGLE_DOMAINS??'japanopenpoker.com,huntersite.jp').split(',').map(v=>v.trim()),googleClientId:process.env.GOOGLE_CLIENT_ID,googleClientSecret:process.env.GOOGLE_CLIENT_SECRET,newsFeeds:(process.env.NEWS_FEED_URLS??'https://www.ml-bear-times.com/rss/').split(',').map(v=>v.trim()).filter(Boolean),slackBotToken:process.env.SLACK_BOT_TOKEN?.trim()||undefined,slackWorkspaceUrl:process.env.SLACK_WORKSPACE_URL?.trim()||undefined};
+if(config.slackBotToken&&!/^xoxb-/.test(config.slackBotToken))throw Error('SLACK_BOT_TOKEN must be a bot token (xoxb-…)');
+if(config.slackWorkspaceUrl&&new URL(config.slackWorkspaceUrl).protocol!=='https:')throw Error('SLACK_WORKSPACE_URL must be https');
 for(const f of config.newsFeeds){const u=new URL(f);if(u.protocol!=='https:'||u.username||u.password)throw Error('RSS feeds must be trusted HTTPS URLs');}
 const store=new Store(resolve(dataDir,localDev?'portal-local.sqlite':'portal.sqlite'));
 const blobs=new LocalBlobs(resolve(dataDir,'blobs'));await rebuildSearch(store,blobs);
-const {app}=createApp(config,store,blobs,new LocalPreviewRenderer());
-const server=serve({fetch:app.fetch,hostname:'127.0.0.1',port:Number(process.env.PORT||url.port||8788)},()=>console.log(`業務ポータル ${localDev?'[LOCAL DEVELOPMENT]':''} ${origin}`));
+const {app}=createApp(config,store,blobs,new LocalPreviewRenderer(),{
+ setupTemplate:readFileSync(new URL('./codex-setup.ps1',import.meta.url),'utf8'),
+ asset:name=>readAsset(new URL('../public/'+name,import.meta.url))
+});
+// Local development always binds to loopback. Production may bind 0.0.0.0 (container/Fly) behind HTTPS.
+const hostname=localDev?'127.0.0.1':(process.env.HOST??'127.0.0.1');
+if(!['127.0.0.1','0.0.0.0','::','::1'].includes(hostname))throw Error('HOST must be 127.0.0.1, 0.0.0.0, :: or ::1');
+const server=serve({fetch:app.fetch,hostname,port:Number(process.env.PORT||url.port||8788)},()=>console.log(`業務ポータル ${localDev?'[LOCAL DEVELOPMENT]':''} ${origin}`));
 for(const signal of ['SIGINT','SIGTERM'] as const)process.on(signal,()=>{server.close(()=>{store.close();process.exit(0);});});

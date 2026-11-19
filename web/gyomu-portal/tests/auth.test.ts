@@ -13,10 +13,10 @@ const config:Config={origin:'http://127.0.0.1:8788',localDev:true,dataDir:'unuse
 const initial=1794787200,day=86400;
 function harness(store:Store,clock:()=>number,cfg=config){
  const auth=new Auth(store,cfg,clock),app=new Hono<AppEnv>();
- app.post('/login',c=>auth.localLogin(c));
- app.post('/logout',c=>auth.logout(c));
- app.get('/google',c=>auth.google(c));
- app.get('/me',c=>{const s=auth.require(c);return c.json({id:s.id,csrf:s.csrf,expires_at:s.expires_at});});
+ app.post('/login',async c=>(await auth.localLogin(c)));
+ app.post('/logout',async c=>(await auth.logout(c)));
+ app.get('/google',async c=>(await auth.google(c)));
+ app.get('/me',async c=>{const s=(await auth.require(c));return c.json({id:s.id,csrf:s.csrf,expires_at:s.expires_at});});
  return {auth,request:(path:string,init?:RequestInit)=>app.request(cfg.origin+path,init)};
 }
 function cookieFrom(res:Response){const cookie=res.headers.get('set-cookie');assert.ok(cookie);return cookie.split(';')[0];}
