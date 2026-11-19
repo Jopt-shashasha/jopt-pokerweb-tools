@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { Hono } from 'hono';
 import { DatabaseSync } from 'node:sqlite';
@@ -15,6 +15,7 @@ function harness(store:Store,clock:()=>number,cfg=config){
  const auth=new Auth(store,cfg,clock),app=new Hono<AppEnv>();
  app.post('/login',c=>auth.localLogin(c));
  app.post('/logout',c=>auth.logout(c));
+ app.get('/google',c=>auth.google(c));
  app.get('/me',c=>{const s=auth.require(c);return c.json({id:s.id,csrf:s.csrf,expires_at:s.expires_at});});
  return {auth,request:(path:string,init?:RequestInit)=>app.request(cfg.origin+path,init)};
 }
@@ -100,4 +101,21 @@ test('legacy one-hour sessions migrate without reviving expired logins or changi
   assert.equal(db.one<{n:number}>('SELECT COUNT(*) n FROM users')?.n,1);
   assert.equal(db.one<{n:number}>('SELECT COUNT(*) n FROM resources')?.n,0);
  }finally{db?.close();assert.equal(resolve(dir,'..'),parent);await rm(dir,{recursive:true,force:true});}
+});
+
+test('configured Google sign-in can be verified on loopback with PKCE and browser binding; no identity is issued before callback',async()=>{
+ const db=new Store(':memory:');
+ const fetchMock=mock.method(globalThis,'fetch',async()=>new Response(JSON.stringify({issuer:'https://accounts.google.com',authorization_endpoint:'https://accounts.google.com/o/oauth2/v2/auth',token_endpoint:'https://oauth2.googleapis.com/token',jwks_uri:'https://www.googleapis.com/oauth2/v3/certs',response_types_supported:['code'],subject_types_supported:['public'],id_token_signing_alg_values_supported:['RS256']}),{headers:{'content-type':'application/json'}}));
+ try{
+  const h=harness(db,()=>initial,{...config,googleClientId:'local-test-client',googleClientSecret:'test-only-secret'});
+  const res=await h.request('/google');assert.equal(res.status,302);
+  const redirect=new URL(res.headers.get('location')!);assert.equal(redirect.origin,'https://accounts.google.com');
+  assert.equal(redirect.searchParams.get('redirect_uri'),config.origin+'/auth/callback');assert.equal(redirect.searchParams.get('scope'),'openid email profile');
+  assert.equal(redirect.searchParams.get('code_challenge_method'),'S256');assert.ok(redirect.searchParams.get('code_challenge'));assert.ok(redirect.searchParams.get('nonce'));
+  assert.ok(redirect.searchParams.get('state'));assert.doesNotMatch(redirect.href,/test-only-secret/);
+  assert.match(res.headers.get('set-cookie')!,/^portal-oauth=/);assert.match(res.headers.get('set-cookie')!,/HttpOnly/);
+  assert.equal(db.one<{n:number}>('SELECT COUNT(*) n FROM oauth_requests')?.n,1);assert.equal(db.one<{n:number}>('SELECT COUNT(*) n FROM sessions')?.n,0);
+  const unsafe=harness(db,()=>initial,{...config,origin:'http://example.test',googleClientId:'local-test-client',googleClientSecret:'test-only-secret'});assert.equal((await unsafe.request('/google')).status,503);
+  assert.equal((await harness(db,()=>initial).request('/google')).status,503);
+ }finally{fetchMock.mock.restore();db.close();}
 });

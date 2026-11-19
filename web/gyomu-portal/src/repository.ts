@@ -35,7 +35,8 @@ export class Catalog {
   const events=resourceEvents(this.store,r.id).map(e=>({...e,event_scope_name:e.event_scope_id?this.store.one<{name:string}>('SELECT name FROM event_scopes WHERE id=?',e.event_scope_id)?.name??null:null}));
   return {...safe,events,reader_guide:guide?JSON.parse(guide.content) as ReaderGuide:null,markdown:md?{...md,view_url:`/api/resources/${r.id}/markdown`,download_url:`/api/resources/${r.id}/markdown/download`}:null,has_search_body:hasBody||!!md,tags:JSON.parse(tags),categories:JSON.parse(categories??'[]'),is_saved:!!r.is_saved,can_edit:canEdit(r,user),has_html:!!html_blob,
    preview_image_url:`/api/resources/${r.id}/preview-image`,
-   open_url:html_blob?`/preview/${r.id}`:r.url,
+   // A retained HTML copy is for preview/recovery; the registered URL is the primary entry.
+   open_url:r.url??(html_blob?`/preview/${r.id}`:null),
    file_count:source.file_manifest?.length??(html_blob?1:0),total_bytes:source.total_bytes??null,
    ...(user.role==='admin'?{source_metadata:source}:{})};
  }

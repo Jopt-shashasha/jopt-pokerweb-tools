@@ -25,6 +25,14 @@ function fixture(){
  return {store,catalog:new Catalog(store),admin:add('admin@japanopenpoker.com','admin'),a:add('a@japanopenpoker.com','user'),b:add('b@japanopenpoker.com','user')};
 }
 const input=(title:string,extra:Record<string,unknown>={})=>({title,url:'https://example.com/resource',...extra});
+test('registered source URL remains the entry when a retained HTML preview exists',()=>{
+ const {store,catalog,a}=fixture();try{
+  const external=catalog.create(a,input('Drive archive',{url:'https://drive.google.com/file/d/source/view'}),{blob:'retained-preview',filename:'source.html',bytes:10,sha256:'source-hash'});
+  assert.equal(external.open_url,'https://drive.google.com/file/d/source/view');assert.equal(external.has_html,true);
+  const legacy=catalog.create(a,{title:'Unmigrated local draft',url:null},{blob:'local-preview',filename:'draft.html',bytes:10,sha256:'draft-hash'});
+  assert.equal(legacy.open_url,`/preview/${legacy.id}`);
+ }finally{store.close();}
+});
 test('authorization applies to detail, search, counts, saved and recommendations',()=>{
  const {store,catalog,admin,a,b}=fixture();try{
   const pub=catalog.create(a,input('shared'));

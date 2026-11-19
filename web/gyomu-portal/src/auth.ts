@@ -56,7 +56,11 @@ export class Auth {
   this.db.run("UPDATE users SET role='admin' WHERE id=?",u.id);this.newSession(c,u.id);return c.json({ok:true});
  }
  private server(){return this.discovery??=oauth.discoveryRequest(new URL('https://accounts.google.com')).then(r=>oauth.processDiscoveryResponse(new URL('https://accounts.google.com'),r)).catch(e=>{this.discovery=undefined;throw e;});}
- private configured(){if(!this.config.googleClientId||!this.config.googleClientSecret||this.config.localDev)throw new HTTPException(503,{message:'Googleログインの接続設定が必要です。'});}
+ private configured(){
+  if(!this.config.googleClientId||!this.config.googleClientSecret)throw new HTTPException(503,{message:'Googleログインの接続設定が必要です。'});
+  // Real OIDC can be verified locally; the development identity remains loopback-only.
+  if(this.config.localDev){const u=new URL(this.config.origin);if(u.protocol!=='http:'||u.hostname!=='127.0.0.1')throw new HTTPException(503,{message:'ローカル検証はこのPC内の接続だけを使用してください。'});}
+ }
  async google(c:Ctx){
   this.configured();const key=c.req.header('x-forwarded-for')??'single-node';const t=this.attempts.get(key);
   if(t&&t.until>epoch()&&t.count>=20)throw new HTTPException(429,{message:'しばらく待ってからログインしてください。'});

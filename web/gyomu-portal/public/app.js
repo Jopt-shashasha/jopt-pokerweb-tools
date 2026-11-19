@@ -104,7 +104,7 @@ async function agentPage(requestId,id){
 async function render(){
  const id=++renderId;currentResource=null;const {parts,params}=route();const kind=parts[0]||'home';
  document.querySelectorAll('[data-nav]').forEach(a=>{const on=a.dataset.nav===kind;a.classList.toggle('active',on);if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
- if(!session?.user){$('#page').innerHTML=`<section class="login-box"><h1>必要な資料を、ひとつの入口から。</h1><p>会社のGoogleアカウントでログインしてください。</p>${session?.local_dev?'<button class="primary" id="local-login">このPCの開発環境を開く</button>':session?.google_configured?'<a class="primary" href="/auth/google">Googleでログイン</a>':'<p>Googleログインの接続設定が必要です。</p>'}<p class="muted">ログイン状態はこのブラウザに保存されます。共有PCでは利用後にログアウトしてください。</p></section>`;return;}
+ if(!session?.user){$('#page').innerHTML=`<section class="login-box"><h1>必要な資料を、ひとつの入口から。</h1><p>会社のGoogleアカウントでログインしてください。</p>${session?.google_configured?'<a class="primary" href="/auth/google">Googleでログイン</a>':'<p>Googleログインの接続設定が必要です。</p>'}${session?.local_dev?'<p><button class="secondary" id="local-login">このPCの開発環境を開く</button></p>':''}<p class="muted">ログイン状態はこのブラウザに保存されます。共有PCでは利用後にログアウトしてください。</p></section>`;return;}
  $('#page').innerHTML='<p class="empty">読み込んでいます…</p>';
  try{
   if(kind==='home')await home(id);
