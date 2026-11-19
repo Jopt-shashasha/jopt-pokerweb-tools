@@ -74,6 +74,7 @@ export function createApp(config:Config,store:Database,blobs:BlobStore,previewRe
  app.post('/api/codex/setup',async c=>c.json(await tokens.issueSetupCode(c.get('user')),201));
  app.get('/api/codex/tokens',async c=>c.json({items:await tokens.list(c.get('user')),notice_interval:await tokens.noticeInterval()}));
  app.put('/api/admin/codex/notice-interval',async c=>c.json(await tokens.setNoticeInterval(c.get('user'),(await json(c)).interval)));
+ app.post('/api/codex/tokens/:id/reset-notice',async c=>c.json(await tokens.resetNoticeForTest(c.get('user'),c.req.param('id'))));
  app.delete('/api/codex/tokens/:id',async c=>c.json(await tokens.revoke(c.get('user'),c.req.param('id'))));
  app.get('/api/masters',async c=>c.json(await catalog.masters(c.get('user'))));
  app.post('/api/admin/event-scopes',async c=>{const b=await json(c);if(typeof b.event!=='string'||typeof b.name!=='string')throw new HTTPException(400);return c.json(await catalog.addEventScope(c.get('user'),b.event,b.name),201);});

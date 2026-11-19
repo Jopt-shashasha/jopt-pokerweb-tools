@@ -11,6 +11,12 @@ import { Slack } from '../src/slack.js';
 import type { Config, User } from '../src/model.js';
 
 const origin = 'https://portal.test';
+const newsFeed = 'https://news.example/rss';
+const newsTitle = 'AI assistant launches new feature';
+const newsRss = `<rss version="2.0"><channel><title>Test AI News</title><item>
+ <title>${newsTitle}</title><link>https://news.example/story</link>
+ <description>A short description of the feature.</description>
+</item></channel></rss>`;
 const migrationDir = new URL('../dist/.openai/drizzle/', import.meta.url);
 const migrations = (await readdir(migrationDir)).filter(name => name.endsWith('.sql')).sort();
 
@@ -18,7 +24,10 @@ test('Site Worker uses D1 and R2 for resources, authenticated MCP, and duplicate
  const mf = new Miniflare({
   modules: true, scriptPath: 'dist/server/index.js', compatibilityDate: '2026-07-30',
   compatibilityFlags: ['nodejs_compat'], d1Databases: ['DB'], r2Buckets: ['BUCKET'],
-  bindings: { APP_ORIGIN: origin, NEWS_FEED_URLS: '' }
+  bindings: { APP_ORIGIN: origin, NEWS_FEED_URLS: newsFeed },
+  outboundService: (request: {url:string}) => request.url === newsFeed
+   ? new Response(newsRss, {headers:{'content-type':'application/rss+xml'}})
+   : new Response(null, {status:404})
  });
  try {
   const db = await mf.getD1Database('DB');
@@ -44,6 +53,11 @@ test('Site Worker uses D1 and R2 for resources, authenticated MCP, and duplicate
   assert.equal((await request('/auth/google')).status,503);
   assert.equal((await write('POST','/auth/local',{})).status,404);
   assert.equal((await request('/api/resources')).status,401);
+  const newsResponse = await request('/api/news',{headers:reader.headers});
+  assert.equal(newsResponse.status,200);
+  const news = await newsResponse.json() as { items: {title:string;url:string;source:string}[]; error: string|null };
+  assert.equal(news.error,null);
+  assert.deepEqual(news.items.map(item=>item.title),[newsTitle]);
   assert.equal((await write('POST','/api/resources',{title:'missing URL'},owner.headers)).status,400);
   const res = await write('POST','/api/resources',input,owner.headers);
   assert.equal(res.status,201,await res.clone().text());
@@ -88,6 +102,10 @@ test('Site Worker uses D1 and R2 for resources, authenticated MCP, and duplicate
     return JSON.parse((result.content as {text:string}[])[0].text);
    }
    assert.equal((await call('portal_search',{q:'Voucher'})).total,1);
+   const mcpNews = await call('portal_news',{});
+   assert.equal(mcpNews.error,null);
+   assert.deepEqual(mcpNews.items.map(({title,url,source}: typeof news.items[number])=>({title,url,source})),
+    news.items.map(({title,url,source})=>({title,url,source})));
    const pending = await call('portal_register_link',{title:'Test MCP',url:'https://example.com/mcp',description:'Link only'});
    const id = new URL(pending.browser_url).hash.split('/').at(-1);
    const execute = '/api/agent/requests/'+id+'/execute';
@@ -96,6 +114,21 @@ test('Site Worker uses D1 and R2 for resources, authenticated MCP, and duplicate
    assert.deepEqual(executions.map(r=>r.status),[200,200]);
    assert.equal((await store.one<{n:number}>("SELECT COUNT(*) n FROM resources WHERE title='Test MCP'"))?.n,1);
    const tokens: any = await (await request('/api/codex/tokens',{headers:reader.headers})).json();
+   const tokenId = tokens.items[0].id;
+   const resetNotice = '/api/codex/tokens/'+tokenId+'/reset-notice';
+   const unread = { last_notice_at:null,last_seen_new_at:null,last_seen_news_at:null };
+   const noticeState = () => store.one(
+    'SELECT last_notice_at,last_seen_new_at,last_seen_news_at FROM agent_tokens WHERE id=?',tokenId);
+   assert.equal((await write('POST',resetNotice,{},reader.headers)).status,403);
+   assert.equal((await write('POST',resetNotice,{},owner.headers)).status,404);
+   await store.run('UPDATE agent_tokens SET user_id=? WHERE id=?',owner.user.id,tokenId);
+   assert.ok('skip' in await call('portal_whats_new',{}) === false);
+   assert.equal((await call('portal_whats_new',{})).skip,true);
+   assert.notDeepEqual(await noticeState(),unread);
+   assert.equal((await write('POST',resetNotice,{},owner.headers)).status,200);
+   assert.deepEqual(await noticeState(),unread);
+   assert.equal((await call('portal_whats_new',{})).skip,undefined);
+   await store.run('UPDATE agent_tokens SET user_id=? WHERE id=?',reader.user.id,tokenId);
    assert.equal((await request('/api/codex/tokens/'+tokens.items[0].id,{method:'DELETE',headers:reader.headers})).status,200);
    assert.equal((await request('/setup/whoami',{headers:{authorization:'Bearer '+token}})).status,401);
   } finally { await client.close(); }

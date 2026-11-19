@@ -43,7 +43,8 @@ export function parseNewsFeed(text:string,feedUrl:string):NewsItem[]{
 }
 export class News {
  private inflight?:Promise<{items:NewsItem[];stale:boolean;error:string|null}>;
- constructor(private store:Database,private feeds:string[],private fetcher:typeof fetch=fetch,private clock=epoch){}
+ // Workers require global fetch to be called with its original receiver.
+ constructor(private store:Database,private feeds:string[],private fetcher:typeof fetch=(...args)=>fetch(...args),private clock=epoch){}
  async get(){
   const cached=await this.store.one<{payload:string;fetched_at:number}>('SELECT * FROM news_cache WHERE id=1');
   const raw=cached?JSON.parse(cached.payload) as NewsItem[]:[],items=raw.filter(isProductNews);

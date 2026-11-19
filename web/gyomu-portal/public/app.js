@@ -44,15 +44,90 @@ function row(r){const t=readerType(r);return `<article class="resource-row reade
 function empty(text){return `<div class="empty"><p>${esc(text)}</p>${link('/library','資料・ツールの一覧へ','secondary')}</div>`;}
 // Department colour: a stable palette slot from the department name (class-based; CSP blocks inline styles).
 function tone(name){if(!name)return 'tone-none';let h=0;for(const c of name)h=(h*31+c.codePointAt(0))>>>0;return 'tone-'+(h%8);}
-function pickupCard(r){return link('/resource/'+r.id,`<small class="dept-chip ${tone(r.department_name)}">${esc(r.department_name||'セクション未分類')}</small><h3>${esc(r.title)}</h3>${r.headline?`<p class="impact-line">⏱ ${esc(r.headline.effect)}</p>`:''}<p><span>${esc(r.creator_name)}</span><span class="card-arrow" aria-hidden="true">→</span></p>`,'pickup-card '+tone(r.department_name));}
+function pickupCard(r){
+ return link('/resource/'+r.id,`
+  <div class="pickup-art"><img src="${esc(r.preview_image_url)}?v=${r.version}" alt="" width="960" height="540" loading="lazy"></div>
+  <div class="pickup-caption"><h3>${esc(r.title)}</h3><small>${esc(r.creator_name)}</small></div>
+ `,'pickup-card '+tone(r.department_name));
+}
+function pickupCards(items){
+ return items.map(pickupCard).join('')||'<p class="muted">共有済みの資料がまだありません。</p>';
+}
 function newsRows(items){return items.map(n=>`<article class="news-row"><h3><a href="${esc(n.url)}" target="_blank" rel="noopener noreferrer">${esc(n.title)}</a></h3>${n.summary?`<p class="news-summary">${esc(n.summary)}</p>`:''}<div class="news-meta"><small>${esc(n.source)} · 配信日 ${date(n.published_at)}</small><a href="${esc(n.url)}" target="_blank" rel="noopener noreferrer">記事の詳細 ↗</a>${n.source_url?`<a href="${esc(n.source_url)}" target="_blank" rel="noopener noreferrer">関連リンク ↗</a>`:''}</div></article>`).join('');}
 async function fillNews(id,limit=3){
  try{const data=await api('/news');if(id!==renderId)return;const el=$('#news-content');if(el)el.innerHTML=(data.error?`<p class="muted">${esc(data.error)}${data.stale?' 保存済みの記事を表示しています。':''}</p>`:'')+(data.items.length?newsRows(data.items.slice(0,limit)):'<p class="muted">表示できるニュースはありません。</p>');}
  catch(e){if(id===renderId&&$('#news-content'))$('#news-content').textContent=e.message;}
 }
+const HOME_TAG_COUNT=4;
+const HOME_TAG_ROTATION_MS=25000;
+let homeTagTimer;
+function homeTagPool({tags=[],categories=[],events=[]}){
+ const filters=(items,key)=>items.filter(item=>item.count>0).map(({name,count})=>({name,count,key}));
+ const candidates=[
+  ...filters(tags,'tag').slice(0,16),
+  ...[...filters(categories,'category'),...filters(events,'event')].sort((a,b)=>b.count-a.count),
+ ];
+ const seen=new Set();
+ return candidates.filter(({name})=>{
+  if(seen.has(name))return false;
+  seen.add(name);
+  return true;
+ }).slice(0,16);
+}
+function startHomeTags(pool){
+ const section=$('#home-tags'),list=$('#home-tag-list'),next=$('#home-tag-next');
+ let shown=[];
+ function shuffle(items){
+  const copy=[...items];
+  for(let i=copy.length-1;i>0;i--){
+   const j=Math.floor(Math.random()*(i+1));
+   [copy[i],copy[j]]=[copy[j],copy[i]];
+  }
+  return copy;
+ }
+ function rotate(){
+  shown=[...shuffle(pool.filter(tag=>!shown.includes(tag))),...shuffle(shown)].slice(0,HOME_TAG_COUNT);
+  list.innerHTML=shown.map(({name,key})=>link('/library?'+key+'='+encodeURIComponent(name),`<span aria-hidden="true">#</span> ${esc(name)}`,'home-tag')).join('');
+ }
+ rotate();
+ if(pool.length<=HOME_TAG_COUNT)return;
+ const restart=()=>{
+  clearInterval(homeTagTimer);
+  homeTagTimer=setInterval(()=>{
+   if(!document.hidden&&!section.matches(':hover, :focus-within')&&!document.querySelector('dialog[open]'))rotate();
+  },HOME_TAG_ROTATION_MS);
+ };
+ next.addEventListener('click',()=>{rotate();restart();});
+ restart();
+}
 async function home(id){
  const data=await api('/home');if(id!==renderId)return;
- $('#page').innerHTML=`<section class="hero"><h1>何をお探しですか？</h1><p>資料・ツールを、部署をこえて探す。</p>${searchForm()}<div class="browse-links">${link('/sections','セクションから探す →')}${link('/events','大会から探す →')}</div></section><div class="home-column"><section class="upload-strip"><div><strong>作ったものを、みんなの仕事へ。</strong><p>ツール・資料・Webページを、ひとつの入口から共有。</p></div><div><button class="primary" data-register="entry">＋ 登録</button></div></section><section aria-labelledby="pickup-title"><div class="section-label"><h2 id="pickup-title">PICK UP <small>登録済みの資料から自動表示</small></h2><button id="pickup-next">入れ替える ↻</button></div><div class="pickup-grid" id="pickup-grid">${data.pickup.map(pickupCard).join('')||'<p class="muted">共有済みの資料がまだありません。</p>'}</div></section><section class="news" aria-labelledby="news-title"><div class="section-label"><h2 id="news-title">AIニュース <small>ML_Bear Times</small></h2>${link('/news','一覧 →')}</div><div id="news-content"><p class="muted">ニュースを読み込んでいます…</p></div></section></div>`;void fillNews(id);
+ const pool=homeTagPool(data.masters);
+ const browse=`<nav class="home-browse" aria-label="資料の探し方">
+  ${link('/sections','<strong>セクションから探す</strong><small>部署・チーム別</small>','home-browse-card home-browse-section')}
+  ${link('/events','<strong>大会から探す</strong><small>シリーズ・開催地別</small>','home-browse-card home-browse-event')}
+ </nav>`;
+ const tags=pool.length?`<section class="home-tags" id="home-tags" aria-label="タグから探す">
+  <div class="home-tag-list" id="home-tag-list"></div>
+  ${pool.length>HOME_TAG_COUNT?'<button type="button" id="home-tag-next" class="home-tag-next" aria-label="タグを入れ替える" title="タグを入れ替える">↻</button>':''}
+ </section>`:'';
+ $('#page').innerHTML=`<div class="home-layout">
+  <section class="hero"><h1>何をお探しですか？</h1><p>資料・ツールを、部署をこえて探す。</p>${searchForm()}${tags}${browse}</section>
+  <section class="upload-strip"><div><strong>作ったものを、みんなの仕事へ。</strong><p>ツール・資料・Webページを、ひとつの入口から共有。</p></div><button class="primary" data-register="entry">＋ 登録</button></section>
+  <aside class="home-pickup" aria-label="おすすめの資料・ツール">
+   <details class="pickup-panel" open>
+    <summary><span>PICK UP</span></summary>
+    <div class="pickup-grid" id="pickup-grid">${pickupCards(data.pickup)}</div>
+    <div class="pickup-actions">${link('/library','すべて見る')}<button type="button" id="pickup-next">入れ替える</button></div>
+   </details>
+  </aside>
+  <section class="news" aria-labelledby="news-title">
+   <div class="section-label"><h2 id="news-title">AIニュース <small>ML_Bear Times</small></h2>${link('/news','一覧 →')}</div>
+   <div id="news-content"><p class="muted">ニュースを読み込んでいます…</p></div>
+  </section>
+ </div>`;
+ if(pool.length)startHomeTags(pool);
+ void fillNews(id);
 }
 let filtersOpen=false;
 const eventAssignments=r=>r.events??(r.event?[{event:r.event,event_scope_id:r.event_scope_id,event_scope_name:r.event_scope_name}]:[]);
@@ -110,6 +185,7 @@ async function agentPage(requestId,id){
  $('#page').innerHTML=`${title('Codexからの依頼：'+names[r.operation],'実行結果は、この依頼を作成したCodexへ返されます。')}<section class="detail-side"><h2>操作するアカウント</h2><p>${esc(session.user.name)} · ${esc(session.user.email)}</p><dl>${details}</dl>${r.state==='pending'?`<div class="detail-actions"><button class="primary" data-agent-execute="${r.id}">${r.operation==='register'?'この内容で登録する':names[r.operation]+'する'}</button><button class="secondary" data-agent-cancel="${r.id}">キャンセル</button></div>`:`<p role="status">${r.state==='done'?'完了しました。Codexで結果を取得できます。':r.state==='cancelled'?'キャンセルしました。':'操作できませんでした。'}</p>${resultHtml}`}</section>`;
 }
 async function render(){
+ clearInterval(homeTagTimer);
  const id=++renderId;currentResource=null;const {parts,params}=route();const kind=parts[0]||'home';
  document.querySelectorAll('[data-nav]').forEach(a=>{const on=a.dataset.nav===kind;a.classList.toggle('active',on);if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
  if(!session?.user){$('#page').innerHTML=`<section class="login-box"><h1>必要な資料を、ひとつの入口から。</h1><p>会社のGoogleアカウントでログインしてください。</p>${session?.google_configured?'<a class="primary" href="/auth/google">Googleでログイン</a>':'<p>Googleログインの接続設定が必要です。</p>'}${session?.local_dev?'<p><button class="secondary" id="local-login">このPCの開発環境を開く</button></p>':''}<p class="muted">ログイン状態はこのブラウザに保存されます。共有PCでは利用後にログアウトしてください。</p></section>`;return;}
@@ -204,7 +280,7 @@ async function openCodexSetup(){
   <li>Windowsのスタートメニューで「ChatGPT」または「Codex」を検索し、アプリを開きます。</li>
  </ol>
  <details class="codex-detail"><summary>このPCで何が設定されますか？</summary><p class="muted">あなた専用の連携キーを保存し、Codexがポータルを検索できるようにします。キーは「読む」専用です。登録はこれまで通りブラウザで確認してから行います。部署で共有しているCodexアカウントでも、あなたの権限で動きます。</p></details>
- <h3 class="codex-subtitle">連携中のPC</h3>${tokens.length?`<ul class="codex-tokens">${tokens.map(t=>`<li><span><b>${esc(t.label)}</b><small>設定：${date(t.created_at)} · 最終利用：${t.last_used_at?date(t.last_used_at):'まだありません'}</small></span><button class="secondary" data-revoke-token="${esc(t.id)}">解除</button></li>`).join('')}</ul>`:'<p class="muted">まだありません。</p>'}`);
+ <h3 class="codex-subtitle">連携中のPC</h3>${tokens.length?`<ul class="codex-tokens">${tokens.map(t=>`<li><span><b>${esc(t.label)}</b><small>設定：${date(t.created_at)} · 最終利用：${t.last_used_at?date(t.last_used_at):'まだありません'}</small></span>${session.user.role==='admin'?`<button type="button" class="secondary" data-reset-notice="${esc(t.id)}" aria-label="${esc(t.label)}のお知らせをテスト用にリセット">通知テスト</button>`:''}<button class="secondary" data-revoke-token="${esc(t.id)}">解除</button></li>`).join('')}</ul>`:'<p class="muted">まだありません。</p>'}`);
 }
 function info(titleText,body){$('#info-title').textContent=titleText;$('#info-body').innerHTML=body;$('#info-dialog').showModal();}
 function openRegistrationEntry(){
@@ -308,10 +384,24 @@ document.addEventListener('click',async e=>{
    await api('/resources/'+r.id,{method:'PUT',body:JSON.stringify(bodyFromResource(r,{kind:g.suggested_kind||r.kind,tags:[...new Set([...r.tags,...g.suggested_tags])]}))});
    masters=await api('/masters');await render();toast('分類・タグを反映しました。');return;
   }
-  if(b.id==='pickup-next'){const d=await api('/home');if($('#pickup-grid'))$('#pickup-grid').innerHTML=d.pickup.map(pickupCard).join('');return;}
+  if(b.id==='pickup-next'){
+   const grid=$('#pickup-grid');
+   b.disabled=true;
+   try{const d=await api('/home');if(grid?.isConnected)grid.innerHTML=pickupCards(d.pickup);}
+   finally{b.disabled=false;}
+   return;
+  }
   if(b.id==='codex'){await openCodexSetup();return;}
   if(b.id==='codex-start'){b.disabled=true;const d=await api('/codex/setup',{method:'POST'});codexPrompt=d.prompt;$('#codex-fallback').hidden=false;$('#codex-step-note').textContent='Codexが開いたら、送信ボタンを押してください（10分以内）';b.disabled=false;location.href=d.codex_url;return;}
   if(b.id==='codex-copy'){if(!codexPrompt){const d=await api('/codex/setup',{method:'POST'});codexPrompt=d.prompt;}await navigator.clipboard.writeText(codexPrompt);b.textContent='コピーしました';toast('Codexに貼り付けて送信してください。');return;}
+  if(b.dataset.resetNotice){
+   b.disabled=true;
+   try{
+    await api('/codex/tokens/'+encodeURIComponent(b.dataset.resetNotice)+'/reset-notice',{method:'POST'});
+    toast('通知をリセットしました。Codexで新しい会話を始めてください。');
+   }finally{b.disabled=false;}
+   return;
+  }
   if(b.dataset.revokeToken){b.disabled=true;await api('/codex/tokens/'+b.dataset.revokeToken,{method:'DELETE'});toast('この連携を解除しました。');await openCodexSetup();return;}
   if(b.id==='slack'&&session?.user?.role==='admin'){await openSlackAdmin();return;}
   if(b.id==='slack-intro'){slackIntroMode='channel';slackPicked=new Set();slackDmResults=null;slackPeople=null;await openSlackIntro();return;}

@@ -74,6 +74,17 @@ export class AgentTokens {
   const r=await this.store.run('UPDATE agent_tokens SET revoked_at=? WHERE id=? AND user_id=? AND revoked_at IS NULL',this.clock(),id,user.id);
   if(!r.changes)throw new HTTPException(404);await this.store.batch([this.auditStatement(user.id,'codex_token_revoke',{token_id:id})]);return {ok:true};
  }
+ async resetNoticeForTest(user:User,id:string){
+  if(user.role!=='admin')throw new HTTPException(403);
+  const reset=await this.store.run(
+   `UPDATE agent_tokens
+    SET last_notice_at=NULL,last_seen_new_at=NULL,last_seen_news_at=NULL
+    WHERE id=? AND user_id=? AND revoked_at IS NULL AND expires_at>?`,
+   id,user.id,this.clock());
+  if(!reset.changes)throw new HTTPException(404);
+  await this.store.batch([this.auditStatement(user.id,'codex_notice_test_reset',{token_id:id})]);
+  return {ok:true};
+ }
  /** New published company resources since this token last asked; own department first. */
  async whatsNew(user:User&{department_id?:string|null},tokenId:string){
   const t=this.clock(),row=(await this.store.one<{last_seen_new_at:number|null;created_at:number}>('SELECT last_seen_new_at,created_at FROM agent_tokens WHERE id=?',tokenId))!;
