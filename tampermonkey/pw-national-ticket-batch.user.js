@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PW ナショナルチケット Batch
 // @namespace    pw-national-ticket-batch-safe
-// @version      1.3.12
+// @version      1.3.13
 // @updateURL    https://raw.githubusercontent.com/shashasha-00000/jopt-pokerweb-tools/main/tampermonkey/pw-national-ticket-batch.user.js
 // @downloadURL  https://raw.githubusercontent.com/shashasha-00000/jopt-pokerweb-tools/main/tampermonkey/pw-national-ticket-batch.user.js
 // @description  任意のPokerWeb管理画面からGameID・チケット名TSVを厳密検証し、ナショナルチケットを安全に一件ずつ付与する正式版
@@ -58,7 +58,7 @@
     ticketListUrlKey: 'PW_NATIONAL_TICKET_BATCH_TICKET_LIST_URL',
     emitUrl: '/vagas/emitir_ticket',
     ticketHistoryUrl: '/vagas/historico_ticket',
-    playerSearchUrl: '/jogadores_cb/search',
+    playerSearchUrl: location.hostname === 'japanopt.pokerweb.com.br' ? '/jogadores/search' : '/jogadores_cb/search',
     defaultStoreName: [
       'japanopt.bt.pokerweb.com.br',
       'japanopt.pokerweb.com.br'
@@ -1318,7 +1318,7 @@
 
     panel.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-        <strong>PW ナショナルチケット一括付与 正式版 v1.3.12</strong>
+        <strong>PW ナショナルチケット一括付与 正式版 v1.3.13</strong>
         <div><button id="pwnt-min">Min</button> <button id="pwnt-close">x</button></div>
       </div>
       <div id="pwnt-body" style="overflow:auto;margin-top:8px;">

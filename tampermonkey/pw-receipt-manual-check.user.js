@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         PW 領収書 Manual Check
 // @namespace    pw-receipt-manual-check
-// @version      1.7.6
+// @version      1.7.7
 // @updateURL    https://raw.githubusercontent.com/shashasha-00000/jopt-pokerweb-tools/main/tampermonkey/pw-receipt-manual-check.user.js
 // @downloadURL  https://raw.githubusercontent.com/shashasha-00000/jopt-pokerweb-tools/main/tampermonkey/pw-receipt-manual-check.user.js
 // @description  Manual receipt check. Per-application Game ID, keyword, and date-range TSV with strict URL Cache verification and payment TSV output.
@@ -58,6 +58,7 @@
   }
 
   const CONFIG = {
+    playerPath: location.hostname === "japanopt.pokerweb.com.br" ? "/jogadores" : "/jogadores_cb",
     defaultDateRange: "02/01/2025 - 31/12/2026",
     fetchInformacoes: true,
     betweenPlayerMs: 300,
@@ -166,11 +167,11 @@
   }
 
   function log(...args) {
-    console.log("[PW-MANUAL-v1.7.3]", ...args);
+    console.log("[PW-MANUAL-v1.7.7]", ...args);
   }
 
   function warn(...args) {
-    console.warn("[PW-MANUAL-v1.7.3]", ...args);
+    console.warn("[PW-MANUAL-v1.7.7]", ...args);
   }
 
   function setStatus(text) {
@@ -689,7 +690,7 @@
   async function searchInternalId(gameId) {
     const searchGameId = rawToSearchGameId(gameId);
 
-    const html = await postForm("/jogadores_cb/search", {
+    const html = await postForm(`${CONFIG.playerPath}/search`, {
       query: gameId,
       identifier: "string"
     });
@@ -736,7 +737,7 @@
   }
 
   async function requestPlayerTournamentHtml(internalId, dateRange) {
-    const pageUrl = `/jogadores_cb/painel/${internalId}`;
+    const pageUrl = `${CONFIG.playerPath}/painel/${internalId}`;
 
     const getRes = await limitedFetch(pageUrl, { method: "GET", credentials: "same-origin" });
     if (!getRes.ok) throw new Error(`player page GET HTTP ${getRes.status}`);
@@ -2482,6 +2483,7 @@
       const pollutionCount = candidates.filter(r => r["判定"] === "URL_CACHE_POLLUTION_SUSPECT").length;
       const conflictCount = candidates.filter(r => ["URL_AMBIGUOUS", "URL_VALID_DUPLICATE", "AMBIGUOUS"].includes(r["判定"])).length;
       const reviewCount = getManualReviewRows(candidates).length;
+      const errorCount = candidates.filter(r => r["判定"] === "ERROR").length;
 
       alert(
         `候補検索完了\n\n` +
@@ -2490,10 +2492,11 @@
         `新規追加URL：${addedCount}\n` +
         `汚染の疑い：${pollutionCount}\n` +
         `同名競合：${conflictCount}\n` +
+        `検索エラー：${errorCount}（理由は候補確認欄）\n` +
         `手動確認が必要：${reviewCount}`
       );
 
-      setStatus("候補検索完了");
+      setStatus(errorCount ? `候補検索完了（検索エラー ${errorCount} 件）` : "候補検索完了");
 
     } catch (e) {
       console.error(e);
@@ -2703,7 +2706,7 @@
 
     panel.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-      <div style="font-weight:bold;">PW 領収書抜き出し 人工確認版 v1.7.6</div>
+      <div style="font-weight:bold;">PW 領収書抜き出し 人工確認版 v1.7.7</div>
         <div style="display:flex;gap:4px;">
           <button id="pw-manual-minimize" style="font-size:11px;padding:2px 6px;cursor:pointer;">Min</button>
           <button id="pw-manual-close" style="font-size:11px;padding:2px 6px;cursor:pointer;">x</button>

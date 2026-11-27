@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PW キャッシャーチケット Check
 // @namespace    pw-cashier-ticket-check
-// @version      0.1.2
+// @version      0.1.3
 // @updateURL    https://raw.githubusercontent.com/shashasha-00000/jopt-pokerweb-tools/main/tampermonkey/pw-cashier-ticket-check.user.js
 // @downloadURL  https://raw.githubusercontent.com/shashasha-00000/jopt-pokerweb-tools/main/tampermonkey/pw-cashier-ticket-check.user.js
 // @description  Quick read-only Main Event ticket check from the PokerWeb tournament cashier page.
@@ -22,7 +22,7 @@
     keywordsKey: "PWCTQ_KEYWORDS",
     collapsedKey: "PWCTQ_COLLAPSED",
     defaultKeywords: "Main Event",
-    playerSearchUrl: "/jogadores_cb/search",
+    playerSearchUrl: location.hostname === "japanopt.pokerweb.com.br" ? "/jogadores/search" : "/jogadores_cb/search",
     cashierUrl: "/torneio/abas/caixa/dados_caixa",
     delayMs: 180
   };

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PW Coin Entry Test
 // @namespace    pw-coin-entry-test
-// @version      0.1.0
+// @version      0.1.1
 // @description  TSV GAME ID / COIN; sequential real entry payments with native PW refresh.
 // @match        https://japanopt.pokerweb.com.br/torneio/painel/*
 // @match        https://japanopt.bt.pokerweb.com.br/torneio/painel/*
@@ -45,7 +45,8 @@
     return html;
   }
   async function search(game) {
-    const doc = parse(await post('/jogadores_cb/search', { query: game, identifier: 'string' }));
+    const searchUrl = location.hostname === 'japanopt.pokerweb.com.br' ? '/jogadores/search' : '/jogadores_cb/search';
+    const doc = parse(await post(searchUrl, { query: game, identifier: 'string' }));
     const ids = new Set();
     for (const el of doc.querySelectorAll('[rel], [onclick], a, li, tr')) {
       const text = norm(el.textContent);

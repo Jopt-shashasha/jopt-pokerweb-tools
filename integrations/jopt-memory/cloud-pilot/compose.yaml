@@ -1,0 +1,58 @@
+name: jopt-memory-cloud-pilot
+
+services:
+  memory:
+    image: ghcr.io/basicmachines-co/basic-memory:1.0.0@sha256:cad49f5433bcd8592fea547907a2b967435b3fa60d0f81ebc4d558e2b5cb55a8
+    command: ["basic-memory", "mcp", "--transport", "streamable-http", "--host", "0.0.0.0", "--port", "8000", "--project", "main"]
+    environment:
+      BASIC_MEMORY_HOME: /app/data/basic-memory
+      BASIC_MEMORY_PROJECT_ROOT: /app/data
+      BASIC_MEMORY_DEFAULT_PROJECT: main
+      BASIC_MEMORY_INDEX_CHANGES: "true"
+      BASIC_MEMORY_ENABLE_POSIX_TOOLS: "false"
+      TZ: Asia/Tokyo
+    volumes:
+      - notes:/app/data
+      - index:/home/appuser/.basic-memory
+    networks: [backend]
+    restart: unless-stopped
+
+  gateway:
+    build: .
+    environment:
+      MCP_BASE_URL: https://${MCP_HOST:?Set MCP_HOST}
+      BASIC_MEMORY_URL: http://memory:8000/mcp
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?Set GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?Set GOOGLE_CLIENT_SECRET}
+      PILOT_GOOGLE_EMAIL: ${PILOT_GOOGLE_EMAIL:?Set PILOT_GOOGLE_EMAIL}
+    volumes:
+      - oauth-state:/state
+    networks: [edge, backend]
+    depends_on: [memory]
+    restart: unless-stopped
+
+  https:
+    image: caddy:2.11.9-alpine
+    environment:
+      MCP_HOST: ${MCP_HOST:?Set MCP_HOST}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - tls-data:/data
+      - tls-config:/config
+    networks: [edge]
+    depends_on: [gateway]
+    restart: unless-stopped
+
+networks:
+  edge:
+  backend:
+
+volumes:
+  notes:
+  index:
+  oauth-state:
+  tls-data:
+  tls-config:
