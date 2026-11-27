@@ -5,6 +5,16 @@ const find = (id) => document.getElementById(id);
 const translations = {
   ja: {
     htmlLanguage: "ja", language: "言語", title: "JOPT Memory のインストール",
+    step1: "ステップ 1：自動インストール（Codex・Claude Code など、パソコンのファイルを読める AI）",
+    accountTitle: "ステップ 2：アカウントの指示を手動で貼る",
+    accountIntro: "Codex と Claude Code の常設指示は、それぞれ AGENTS.md と CLAUDE.md に設定されます。ローカル MCP に接続した Claude や ChatGPT のデスクトップチャットで JOPT Memory を使う場合は、下の指示をアカウントのパーソナライズ設定に貼り付けて保存してください。新しいチャットで接続を確認します。",
+    claudeWhere: "Claude の設定 →「マイ Claude」→「指示」に貼り付けて保存します。",
+    copyClaude: "Claude 用の指示をコピー",
+    chatgptWhere: "ChatGPT の設定 →「パーソナライズ」→「カスタム指示」に貼り付けて保存します。表示名はプランや版によって異なる場合があります。",
+    copyChatgpt: "ChatGPT 用の指示をコピー",
+    grokWhere: "未検証のため、まだ設定しないでください。実機で確認した後に追加します。",
+    accountFile: "インストール後、同じ内容のファイルが {path} に保存されます。プロジェクト名を変えてインストールした場合は、そちらのファイルの内容を貼り付けてください。",
+    accountCopied: "コピーしました。設定の指示欄に貼り付けて保存してください。",
     intro: "このパソコンにインストールします。AI が必要なソフトを確認し、Python がなければ、あなたの許可を得てインストールします。",
     platform: "このパソコンの種類", mac: "Mac 版は試験運用中です。実機での確認はこれからです。",
     start: "Codex でインストールを始める", copy: "Claude Code 用の指示をコピー",
@@ -19,6 +29,16 @@ const translations = {
   },
   zh: {
     htmlLanguage: "zh-CN", language: "语言", title: "安装 JOPT Memory",
+    step1: "第 1 步：自动安装（Codex、Claude Code 等能读本机文件的 AI）",
+    accountTitle: "第 2 步：手动粘贴账号指示",
+    accountIntro: "Codex 和 Claude Code 的常驻指示分别放在 AGENTS.md 和 CLAUDE.md。若要在连接了本地 MCP 的 Claude 或 ChatGPT 桌面聊天中使用 JOPT Memory，请把下方指示粘贴到账号的个性化设置并保存，再开一个新对话确认连接。",
+    claudeWhere: "在 Claude 的设置 →「我的 Claude（マイ Claude）」→「指示」里粘贴并保存。",
+    copyClaude: "复制 Claude 用指示",
+    chatgptWhere: "在 ChatGPT 的设置 →「个性化」→「自定义指令」里粘贴并保存。菜单名可能随版本或方案变化。",
+    copyChatgpt: "复制 ChatGPT 用指示",
+    grokWhere: "尚未验证，先不要设置。真机确认后再补上。",
+    accountFile: "安装后，同样内容的文件保存在 {path}。如果安装时改了项目名，请粘贴那里的文件内容。",
+    accountCopied: "已复制。请粘贴到设置里的指示栏并保存。",
     intro: "在这台电脑上安装。AI 会检查所需软件，缺少 Python 时会先问你，再帮你安装。",
     platform: "这台电脑的系统", mac: "Mac 版正在试点，尚待真机验证。",
     start: "用 Codex 开始安装", copy: "复制 Claude Code 安装指令",
@@ -33,6 +53,16 @@ const translations = {
   },
   ko: {
     htmlLanguage: "ko", language: "언어", title: "JOPT Memory 설치",
+    step1: "1단계: 자동 설치 (Codex, Claude Code 등 컴퓨터의 파일을 읽는 AI)",
+    accountTitle: "2단계: 계정 지시를 직접 붙여넣기",
+    accountIntro: "Codex와 Claude Code의 상시 지침은 각각 AGENTS.md와 CLAUDE.md에 설정됩니다. 로컬 MCP에 연결된 Claude 또는 ChatGPT 데스크톱 채팅에서 JOPT Memory를 사용하려면 아래 지침을 계정의 개인 맞춤 설정에 붙여넣어 저장하고 새 채팅에서 연결을 확인하세요.",
+    claudeWhere: "Claude 설정 → ‘내 Claude(Your Claude)’ → ‘지침’에 붙여넣고 저장하세요.",
+    copyClaude: "Claude용 지시 복사 (영어)",
+    chatgptWhere: "ChatGPT 설정 → ‘개인 맞춤 설정’ → ‘맞춤형 지침’에 붙여넣고 저장하세요. 요금제나 버전에 따라 메뉴 이름이 다를 수 있습니다.",
+    copyChatgpt: "ChatGPT용 지시 복사 (영어)",
+    grokWhere: "아직 검증되지 않았으므로 설정하지 마세요. 실제 기기에서 확인한 뒤 추가합니다.",
+    accountFile: "설치 후 같은 내용의 파일이 {path}에 저장됩니다. 설치할 때 프로젝트 이름을 바꿨다면 그 파일의 내용을 붙여넣으세요.",
+    accountCopied: "복사했습니다. 설정의 지시 칸에 붙여넣고 저장하세요.",
     intro: "이 컴퓨터에 설치합니다. AI가 필요한 프로그램을 확인하고 Python이 없으면 먼저 동의를 받은 뒤 설치해 드립니다.",
     platform: "이 컴퓨터의 운영체제", mac: "Mac 버전은 시범 운영 중이며 실제 기기에서 검증이 필요합니다.",
     start: "Codex에서 설치 시작", copy: "Claude Code용 설치 지시 복사",
@@ -62,6 +92,11 @@ const pythonHelp = {
   },
 };
 
+const accountLanguage = { ja: "ja", zh: "zh", ko: "en" };
+const accountFolder = {
+  windows: "%LOCALAPPDATA%\\JOPT Memory\\instructions\\",
+  mac: "~/Library/Application Support/JOPT Memory/instructions/",
+};
 const language = find("language");
 const downloadURL = new URL(release.zip.path, window.location.href).href;
 const labels = document.querySelectorAll("[data-label]");
@@ -95,6 +130,9 @@ function refresh() {
   find("start").href = "codex://new?prompt=" + encodeURIComponent(installPrompt());
   find("manual-copy").hidden = true;
   find("feedback").hidden = true;
+  find("account-file").textContent = messages.accountFile.replace("{path}", accountFolder[options.os]);
+  find("account-copy").hidden = true;
+  find("account-feedback").hidden = true;
 }
 
 async function copyPrompt() {
@@ -116,7 +154,28 @@ async function copyPrompt() {
   feedback.hidden = false;
 }
 
+async function copyAccount(client) {
+  const message = release.account[accountLanguage[language.value]][client];
+  const strings = translations[language.value];
+  const feedback = find("account-feedback");
+  try {
+    await navigator.clipboard.writeText(message);
+    feedback.textContent = strings.accountCopied;
+  } catch {
+    const field = find("account-copy");
+    field.hidden = false;
+    field.value = message;
+    field.focus();
+    field.select();
+    feedback.textContent = strings.fallback;
+  }
+  feedback.hidden = false;
+}
+
 find("download").href = downloadURL;
+for (const button of document.querySelectorAll("[data-copy]")) {
+  button.addEventListener("click", () => copyAccount(button.dataset.copy));
+}
 find("copy").addEventListener("click", copyPrompt);
 language.addEventListener("change", refresh);
 for (const choice of document.querySelectorAll('input[name="os"]')) choice.addEventListener("change", refresh);

@@ -5,10 +5,13 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
+import sys
 from zipfile import ZIP_DEFLATED, ZipFile
 
 SITE = Path(__file__).resolve().parent
 INSTALLER = SITE.parent
+sys.path.insert(0, str(INSTALLER))
+from install import ACCOUNT, PROJECT, render  # noqa: E402
 
 ASSETS = (
     "Install.cmd", "Install-Mac.command", "install.py", "register-task.ps1", "README.md",
@@ -27,6 +30,14 @@ def build(destination):
         bundle.write(INSTALLER.parent / skill, f"JOPT-Memory/{skill}")
     data = {
         "zip": {"path": f"downloads/{archive.name}", "sha256": hashlib.sha256(archive.read_bytes()).hexdigest()},
+        # Same text the installer writes to <state>/instructions/, rendered with the default project.
+        "account": {
+            language: {
+                "claude": render(language, ACCOUNT[language], "basic-memory-jopt", PROJECT),
+                "chatgpt": render(language, ACCOUNT[language], "basic-memory", PROJECT),
+            }
+            for language in ACCOUNT
+        },
     }
     payload = json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
     shutil.copyfile(SITE / "index.html", destination / "index.html")

@@ -19,6 +19,7 @@
   <main class="wrap">
     <section class="hero">
       <h1 data-label="title">JOPT Memory のインストール</h1>
+      <p class="step-tag" data-label="step1">ステップ 1：自動インストール（Codex・Claude Code）</p>
       <p data-label="intro">このパソコンにインストールします。AI が必要なソフトを確認し、Python がなければ、あなたの許可を得てインストールします。</p>
     </section>
     <section class="panel install-panel" aria-labelledby="platform-label">
@@ -45,6 +46,27 @@
       </details>
       <textarea id="manual-copy" readonly rows="8" hidden></textarea>
       <p id="feedback" role="status" hidden></p>
+    </section>
+    <section class="panel step-panel" aria-labelledby="account-title">
+      <h2 id="account-title" data-label="accountTitle">ステップ 2：アカウントの指示を手動で貼る</h2>
+      <p data-label="accountIntro"></p>
+      <div class="client">
+        <h3>Claude</h3>
+        <p data-label="claudeWhere"></p>
+        <button class="secondary" data-copy="claude" data-label="copyClaude" type="button"></button>
+      </div>
+      <div class="client">
+        <h3>ChatGPT</h3>
+        <p data-label="chatgptWhere"></p>
+        <button class="secondary" data-copy="chatgpt" data-label="copyChatgpt" type="button"></button>
+      </div>
+      <div class="client">
+        <h3>Grok Bot</h3>
+        <p data-label="grokWhere"></p>
+      </div>
+      <p class="note" id="account-file"></p>
+      <textarea id="account-copy" readonly rows="8" hidden></textarea>
+      <p id="account-feedback" role="status" hidden></p>
     </section>
   </main>
 </body>
