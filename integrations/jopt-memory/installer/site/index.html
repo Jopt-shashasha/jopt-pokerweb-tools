@@ -1,45 +1,51 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="ja">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>JOPT Memory 安装与验收</title>
+  <title>JOPT Memory のインストール</title>
   <link rel="stylesheet" href="style.css">
   <script defer src="release.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
-  <header class="top"><div class="wrap"><a class="brand" href="./"><span>JOPT</span> Memory</a><nav aria-label="页面导航"><a href="#install">安装</a><a href="#clients">客户端配置</a></nav></div></header>
+  <header class="top"><div class="wrap">
+    <a class="brand" href="./"><span>JOPT</span> Memory</a>
+    <label class="language"><span data-label="language">言語</span>
+      <select id="language"><option value="ja">日本語</option><option value="zh">简体中文</option><option value="ko">한국어</option></select>
+    </label>
+  </div></header>
   <main class="wrap">
-    <section class="hero"><p class="eyebrow">JOPT 员工安装指南</p><h1>在这台电脑上<br>安装 JOPT Memory</h1><p>Codex 和 Claude Code 共用一套本地交接笔记。正式笔记由一个后台任务批量上传到公司共有 Drive。</p><a class="primary" href="#install">开始安装</a></section>
-    <section id="install" aria-labelledby="install-title" class="section">
-      <div class="section-title"><h2 id="install-title">本机安装</h2><p>首次使用先准备一个能在本机运行的 AI、Python 3.12+ 和已登录公司的 Google Drive 桌面版。任选一个 AI 执行，安装程序会配置 Codex 和 Claude Code，并复用现有库和上传任务。</p></div>
-      <div class="panel install-panel">
-        <fieldset><legend>这台电脑的系统</legend><div class="choice"><label><input type="radio" name="os" value="windows" checked><span>Windows</span></label><label><input type="radio" name="os" value="mac"><span>Mac</span></label></div></fieldset>
-        <p id="os-status" class="status"></p>
-        <div class="actions"><a id="codex-install" class="primary" href="#install">在 Codex 打开安装指令</a><button id="claude-install" class="secondary" type="button">复制给 Claude Code</button></div>
-        <div class="subactions"><button id="copy-install" class="text-button" type="button">复制安装指令</button><a id="download" href="#">下载安装包</a><button id="check-upload" class="text-button" type="button">复制上传检查指令</button></div>
-        <details><summary>查看 AI 将收到的指令</summary><textarea id="install-prompt" aria-label="安装指令" readonly rows="8"></textarea></details>
-      </div>
-      <div class="grid how">
-        <article class="panel"><h3>在 AI 里发送指令</h3><p>Codex 打开后发送已填好的指令。Claude Code 请在本地会话里粘贴并发送。浏览器询问是否打开应用时，选择打开。</p></article>
-        <article class="panel"><h3>选公司分配给你的目录</h3><p>先在 Google Drive 桌面版登录公司账号。窗口出现后，按下面的路径定位你的文件夹。</p><div class="path" aria-label="目录示意"><span id="directory-app">文件资源管理器</span><b>Google Drive</b><b>共享云端硬盘 → JOPT</b><strong>公司分配给你的 JOPT Memory 文件夹</strong></div><p class="small">目录示意。选择文件夹后核对来源和去向，再确认安装。</p></article>
-        <article class="panel"><h3>检查上传和首次整理</h3><p>在 Drive 网页确认一份正式笔记能读回。首次整理先预览，再由本人确认写入。已有完整记录时可以跳过。</p><button id="seed" class="secondary compact" type="button">复制首次整理指令</button></article>
-      </div>
+    <section class="hero">
+      <h1 data-label="title">JOPT Memory のインストール</h1>
+      <p data-label="intro">このパソコンにインストールします。AI が必要なソフトを確認し、Python がなければ、あなたの許可を得てインストールします。</p>
     </section>
-    <section id="clients" class="section" aria-labelledby="clients-title">
-      <div class="section-title"><h2 id="clients-title">需要手动配置的客户端</h2><p>以下步骤适用于能够访问这台电脑的客户端。网页和手机上的纯云端 AI 暂不纳入。</p></div>
-      <label class="language">指示语言 <select id="language"><option value="zh">简体中文</option><option value="ja">日本語</option><option value="en">English</option></select></label>
-      <div class="grid">
-        <article class="panel"><h3>ChatGPT 桌面</h3><p>在账号设置的个性化指示中追加文字。用本地会话验证它是否看得到 Basic Memory 工具。</p><button class="secondary compact" data-copy="gpt" type="button">复制 ChatGPT 指示</button></article>
-        <article class="panel"><h3>Claude 普通对话</h3><p>打开 <b>設定 → マイ Claude → 指示</b>，追加文字并保留原有设置。用能访问本机的桌面会话验证。</p><button class="secondary compact" data-copy="claude" type="button">复制 Claude 指示</button></article>
-        <article class="panel grok" id="grok"><p class="badge">待同事实测</p><h3>Grok Bot 本机试用</h3><p>在电脑上打开并登录 Grok Bot。检查 <b>Settings → Computer → Your computer</b>。发送预填指令后，确认批准卡显示的是本机执行。</p><a id="grok-link" class="primary compact" href="#grok">在 Grok Bot 打开本机测试</a><div class="subactions"><button id="copy-grok" class="text-button" type="button">复制测试指令</button><button id="verify-grok" class="text-button" type="button">复制 Codex 回读指令</button></div><details><summary>本机测试通过后保存规则</summary><p>把指示发给当前 Bot，请它存为 JOPT Memory 私有 Skill。测试只会在本地 <code>jopt-tests/</code> 新建一份模拟笔记。</p><button class="secondary compact" data-copy="grok" type="button">复制 Grok Bot 指示</button></details></article>
+    <section class="panel install-panel" aria-labelledby="platform-label">
+      <fieldset><legend id="platform-label" data-label="platform">このパソコンの種類</legend>
+        <div class="choice">
+          <label><input type="radio" name="os" value="windows" checked>Windows</label>
+          <label><input type="radio" name="os" value="mac">Mac</label>
+        </div>
+      </fieldset>
+      <p id="platform-status" class="status" hidden></p>
+      <div class="actions">
+        <a id="start" class="primary" data-label="start" href="#instructions">Codex でインストールを始める</a>
+        <button id="copy" class="secondary" data-label="copy" type="button">Claude Code 用の指示をコピー</button>
       </div>
-      <aside id="clipboard-fallback" class="panel fallback" hidden><h3>请手动复制下面的指令</h3><textarea id="manual-copy" aria-label="待复制的指令" readonly rows="8"></textarea></aside>
+      <ol id="instructions">
+        <li data-label="send">Codex が開いたら、入力済みの指示を送信してください。Claude Code の場合は、コピーした指示を開いている会話に貼り付けて送信します。</li>
+        <li data-label="drive">Google Drive for desktop に会社アカウントでログインします。フォルダ選択画面が出たら、Google Drive の「共有ドライブ」で会社から指定された自分用の JOPT Memory フォルダを選びます。</li>
+        <li data-label="approve">AI やパソコンに確認画面が表示されたら、内容を確認して許可します。</li>
+      </ol>
+      <details>
+        <summary data-label="manual">自分でインストールする</summary>
+        <p id="manual-description"></p>
+        <a id="download" data-label="download" href="downloads/jopt-memory-pilot-1.zip">インストーラーをダウンロード</a>
+      </details>
+      <textarea id="manual-copy" readonly rows="8" hidden></textarea>
+      <p id="feedback" role="status" hidden></p>
     </section>
   </main>
-  <footer class="wrap"><span>JOPT Memory</span><a href="https://docs.x.ai/grok-bot/security#local-execution" target="_blank" rel="noopener">Grok Bot 本机权限文档</a></footer>
-  <p id="feedback" role="status" aria-live="polite" class="toast" hidden></p>
 </body>
 </html>
