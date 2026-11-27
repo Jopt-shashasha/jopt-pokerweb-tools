@@ -12,7 +12,10 @@ const translations = {
     copyClaude: "Claude 用の指示をコピー",
     chatgptWhere: "ChatGPT の設定 →「パーソナライズ」→「カスタム指示」に貼り付けて保存します。表示名はプランや版によって異なる場合があります。",
     copyChatgpt: "ChatGPT 用の指示をコピー",
-    grokWhere: "未検証のため、まだ設定しないでください。実機で確認した後に追加します。",
+    grokWhere: "実機検証待ちです。デスクトップ版の Settings → Computer → Your computer で、その都度確認する設定（Ask every time）を選び、コピーした指示を Bot のチャットに貼り付けてください。事前に Codex で jopt-tests/ に確認コード付きのテストノートを用意します。",
+    copyGrok: "Grok Bot の読み取りテスト指示をコピー",
+    grokCopied: "コピーしました。Grok Bot のチャットに貼り付けて送信してください。",
+    grokPrompt: "Grok Bot デスクトップ版のローカル実行機能を使い、この端末にある JOPT Memory を読み取り専用でテストしてください。まず対象のテストノート名を私に確認し、ローカルで実行する操作を示して承認を待ってください。この端末の {binding} から source 項目を確認し、そのフォルダの jopt-tests/ にある指定ノートだけを読み、相対パスと本文の確認コードを返してください。設定やファイルへの書き込みは行わず、クラウド上の Bot のコンピューター、Google Drive、他のノートは使わないでください。実行できなければ失敗した手順と理由を伝えてください。",
     accountFile: "インストール後、同じ内容のファイルが {path} に保存されます。プロジェクト名を変えてインストールした場合は、そちらのファイルの内容を貼り付けてください。",
     accountCopied: "コピーしました。設定の指示欄に貼り付けて保存してください。",
     intro: "このパソコンにインストールします。AI が必要なソフトを確認し、Python がなければ、あなたの許可を得てインストールします。",
@@ -36,7 +39,10 @@ const translations = {
     copyClaude: "复制 Claude 用指示",
     chatgptWhere: "在 ChatGPT 的设置 →「个性化」→「自定义指令」里粘贴并保存。菜单名可能随版本或方案变化。",
     copyChatgpt: "复制 ChatGPT 用指示",
-    grokWhere: "尚未验证，先不要设置。真机确认后再补上。",
+    grokWhere: "待真机验证。打开 Grok Bot 桌面端的 Settings → Computer → Your computer，选择按次确认（Ask every time），把复制的指示粘贴到 Bot 对话。测试前先用 Codex 在 jopt-tests/ 准备一条带验证码的模拟笔记。",
+    copyGrok: "复制 Grok Bot 只读测试指示",
+    grokCopied: "已复制。请粘贴到 Grok Bot 对话并发送。",
+    grokPrompt: "请用 Grok Bot 桌面端的本机执行功能，对这台电脑上的 JOPT Memory 做只读测试。先问我指定哪一条模拟笔记，再显示将在本机执行的操作并等我批准。从 {binding} 读取 source 字段，进入该目录下的 jopt-tests/，只读取我指定的笔记，返回相对路径和正文中的验证码。不要改动文件或配置，不要去 Bot 云电脑、Google Drive 或其他笔记找替代内容。如果无法完成，说明具体卡在哪一步及原因。",
     accountFile: "安装后，同样内容的文件保存在 {path}。如果安装时改了项目名，请粘贴那里的文件内容。",
     accountCopied: "已复制。请粘贴到设置里的指示栏并保存。",
     intro: "在这台电脑上安装。AI 会检查所需软件，缺少 Python 时会先问你，再帮你安装。",
@@ -60,7 +66,10 @@ const translations = {
     copyClaude: "Claude용 지시 복사 (영어)",
     chatgptWhere: "ChatGPT 설정 → ‘개인 맞춤 설정’ → ‘맞춤형 지침’에 붙여넣고 저장하세요. 요금제나 버전에 따라 메뉴 이름이 다를 수 있습니다.",
     copyChatgpt: "ChatGPT용 지시 복사 (영어)",
-    grokWhere: "아직 검증되지 않았으므로 설정하지 마세요. 실제 기기에서 확인한 뒤 추가합니다.",
+    grokWhere: "실제 기기에서 검증이 필요합니다. Grok Bot 데스크톱 앱의 Settings → Computer → Your computer에서 매번 확인(Ask every time)을 선택하고, 복사한 지시를 Bot 대화에 붙여넣으세요. 테스트 전에 Codex로 jopt-tests/에 확인 코드가 들어 있는 테스트 노트를 준비하세요.",
+    copyGrok: "Grok Bot 읽기 테스트 지시 복사",
+    grokCopied: "복사했습니다. Grok Bot 대화에 붙여넣고 전송하세요.",
+    grokPrompt: "Grok Bot 데스크톱 앱의 로컬 실행 기능으로 이 컴퓨터의 JOPT Memory 읽기 테스트를 진행해 주세요. 먼저 테스트할 노트 이름을 제게 물어보고, 이 컴퓨터에서 실행할 작업을 보여 준 뒤 제 승인을 기다리세요. {binding}에서 source 항목을 확인하고, 그 폴더의 jopt-tests/ 안에서 제가 지정한 노트만 읽어 상대 경로와 본문의 확인 코드를 반환하세요. 파일과 설정을 바꾸거나 Bot의 클라우드 컴퓨터, Google Drive, 다른 노트를 사용하지 마세요. 실행할 수 없다면 어느 단계에서 왜 실패했는지 알려 주세요.",
     accountFile: "설치 후 같은 내용의 파일이 {path}에 저장됩니다. 설치할 때 프로젝트 이름을 바꿨다면 그 파일의 내용을 붙여넣으세요.",
     accountCopied: "복사했습니다. 설정의 지시 칸에 붙여넣고 저장하세요.",
     intro: "이 컴퓨터에 설치합니다. AI가 필요한 프로그램을 확인하고 Python이 없으면 먼저 동의를 받은 뒤 설치해 드립니다.",
@@ -96,6 +105,10 @@ const accountLanguage = { ja: "ja", zh: "zh", ko: "en" };
 const accountFolder = {
   windows: "%LOCALAPPDATA%\\JOPT Memory\\instructions\\",
   mac: "~/Library/Application Support/JOPT Memory/instructions/",
+};
+const uploadBinding = {
+  windows: "%LOCALAPPDATA%\\JOPT Memory\\upload.json",
+  mac: "~/Library/Application Support/JOPT Memory/upload.json",
 };
 const language = find("language");
 const downloadURL = new URL(release.zip.path, window.location.href).href;
@@ -154,13 +167,16 @@ async function copyPrompt() {
   feedback.hidden = false;
 }
 
-async function copyAccount(client) {
-  const message = release.account[accountLanguage[language.value]][client];
+async function copyConfiguration(client) {
   const strings = translations[language.value];
+  const isGrok = client === "grok";
+  const message = isGrok
+    ? strings.grokPrompt.replace("{binding}", uploadBinding[installOptions().os])
+    : release.account[accountLanguage[language.value]][client];
   const feedback = find("account-feedback");
   try {
     await navigator.clipboard.writeText(message);
-    feedback.textContent = strings.accountCopied;
+    feedback.textContent = isGrok ? strings.grokCopied : strings.accountCopied;
   } catch {
     const field = find("account-copy");
     field.hidden = false;
@@ -174,7 +190,7 @@ async function copyAccount(client) {
 
 find("download").href = downloadURL;
 for (const button of document.querySelectorAll("[data-copy]")) {
-  button.addEventListener("click", () => copyAccount(button.dataset.copy));
+  button.addEventListener("click", () => copyConfiguration(button.dataset.copy));
 }
 find("copy").addEventListener("click", copyPrompt);
 language.addEventListener("change", refresh);
